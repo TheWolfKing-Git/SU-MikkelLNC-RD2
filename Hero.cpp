@@ -25,6 +25,9 @@ int Hero::getLevel() const{
 int Hero::getCurrentXP() const{
     return mCurrentXP;
 }
+std::string Hero::getName() const{
+    return mName;
+}
 
 //Setters
 void Hero::setLevel(int newLevel){
@@ -32,6 +35,9 @@ void Hero::setLevel(int newLevel){
 }
 void Hero::setXP(int newXP){
     mCurrentXP = newXP;
+}
+void Hero::setName(std::string newName){
+    mName = newName;
 }
 
 //Functions

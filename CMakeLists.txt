@@ -16,6 +16,6 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core REQUIRED)
 find_package(Qt5Sql REQUIRED)
 
 add_executable(SU-Opgave-Mikkel
-  main.cpp Character.h Character.cpp Hero.h Hero.cpp Enemy.h Enemy.cpp
+  main.cpp Character.h Character.cpp Hero.h Hero.cpp Enemy.h Enemy.cpp Manager.h Manager.cpp
 )
 target_link_libraries(SU-Opgave-Mikkel Qt${QT_VERSION_MAJOR}::Core Qt5::Sql)

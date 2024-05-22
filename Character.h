@@ -7,9 +7,8 @@
 class Character
 {
 public:
-    //Constructor
+    //Constructors
     Character();
-    Character(int InitialHP);
 
     //Getters
     int getHP() const;

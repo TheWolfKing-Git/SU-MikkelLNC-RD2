@@ -12,10 +12,12 @@ public:
     //Getters
     int getLevel() const;
     int getCurrentXP() const;
+    std::string getName() const;
 
     //Setters
     void setLevel(int newLevel);
     void setXP(int newXP);
+    void setName(std::string newName);
 
     //Functions
     void addXP(int addedXP);
