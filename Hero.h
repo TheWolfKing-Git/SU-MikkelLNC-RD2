@@ -22,6 +22,7 @@ public:
     //Functions
     void addXP(int addedXP);
     void addLevel(int addedLevel);
+    void getStats();
 
 protected:
     int mLevel;

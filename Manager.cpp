@@ -13,6 +13,16 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
             qDebug() << mDB.lastError().text();
         }
 
+        // Ensure the connection is set to the "Game" database
+        if (mDB.databaseName() != "Game") {
+            if (!mDB.isOpen()) {
+                qDebug() << "Failed to select database:";
+                qDebug() << mDB.lastError().text();
+            } else {
+                mDB.setDatabaseName("Game");
+            }
+        }
+
         //Create main database for game
         QString createDB = "CREATE DATABASE IF NOT EXISTS Game";
         if (!mGameQuery.exec(createDB)) {
@@ -128,7 +138,13 @@ void Manager::setHero(Hero newHero)
 void Manager::saveHero(){
 
     // Prepare the INSERT query for the Hero table
-    QString insertHeroQuery = "INSERT INTO Hero (Name, HP, DMG, Level, XP) VALUES (?, ?, ?, ?, ?)";
+    QString insertHeroQuery = "INSERT INTO Hero (Name, HP, DMG, Level, XP) "
+                              "VALUES (:Name, :HP, :DMG, :Level, :XP)"
+                              "ON DUPLICATE KEY UPDATE "
+                              "HP = :HP,"
+                              "DMG = :DMG,"
+                              "Level = :Level,"
+                              "XP = :XP";
     mGameQuery.prepare(insertHeroQuery);
 
     // Set values for the hero's attributes
@@ -164,7 +180,7 @@ Hero Manager::loadHero(int heroID) {
     if (!mGameQuery.exec()) {
         qDebug() << "Failed to execute select query:";
         qDebug() << mGameQuery.lastError().text();
-        return Hero();
+        throw std::runtime_error("Failed to execute select query");
     }
 
     // Check if any results were returned
@@ -188,8 +204,7 @@ Hero Manager::loadHero(int heroID) {
     }
     else
     {
-        qDebug() << "No hero found with the ID:" << heroID;
-        return Hero();
+        throw std::runtime_error("No hero found with the specified ID");
     }
 }
 
@@ -203,13 +218,14 @@ void Manager::printHeros()
 
     // Iterate over the results and print each hero's attributes
     while (mGameQuery.next()) {
+        int id = mGameQuery.value("ID").toInt();
         QString name = mGameQuery.value("Name").toString();
         int hp = mGameQuery.value("HP").toInt();
         int dmg = mGameQuery.value("DMG").toInt();
         int level = mGameQuery.value("Level").toInt();
         int xp = mGameQuery.value("XP").toInt();
 
-        qDebug() << "Name:" << name << "HP:" << hp << "DMG:" << dmg << "Level:" << level << "XP:" << xp;
+        qDebug() << "ID:" << id << "Name:" << name << "HP:" << hp << "DMG:" << dmg << "Level:" << level << "XP:" << xp;
     }
 }
 

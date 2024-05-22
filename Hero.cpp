@@ -56,3 +56,14 @@ void Hero::addLevel(int addedLevel){
     mDMG += 1;
     mHP += 2;
 }
+
+void Hero::getStats()
+{
+    std::cout << "---- Current Hero ----" << std::endl;
+    std::cout << "Hero name: " << getName() << std::endl
+              << "HP: " << getHP() << std::endl
+              << "DMG: " << getDMG() << std::endl
+              << "Level: " << getLevel() << std::endl
+              << "XP: " << getCurrentXP()
+              << std::endl;
+}

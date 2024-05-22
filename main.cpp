@@ -53,10 +53,22 @@ int main()
                 std::cout << "Select a resting hero:" << std::endl;
                 Game.printHeros();
                 std::cin >> heroPick;
-                gameHero = Game.loadHero(heroPick);
-                Game.setHero(gameHero);
-                GameState = 5;
-                break;
+
+                try
+                {
+                    // Attempt to load the hero
+                    gameHero = Game.loadHero(heroPick);
+                    Game.setHero(gameHero);
+                    GameState = 5;
+                    break;
+                }
+                catch (const std::runtime_error& e)
+                {
+                    // Handle the case where no hero is found
+                    std::cerr << "Failed to load hero: " << e.what() << std::endl;
+                    GameState = 0;
+                    break;
+                }
 
             case 3:
                 Game.printHeros();
@@ -84,6 +96,7 @@ int main()
                 }
                 else if(AdventureState == 2)
                 {
+                    /*
                     std::cout << "---- Current Hero ----" << std::endl;
                     std::cout << "Hero name: " << gameHero.getName() << std::endl
                               << "HP: " << gameHero.getHP() << std::endl
@@ -91,6 +104,9 @@ int main()
                               << "Level: " << gameHero.getLevel() << std::endl
                               << "XP: " << gameHero.getCurrentXP()
                               << std::endl;
+                    */
+
+                    gameHero.getStats();
                     break;
                 }
                 else if (AdventureState == 3)
