@@ -23,7 +23,6 @@ void Hero::setXP(int newXP){
 
 //Functions
 void Hero::addXP(int addXP){
-
     mCurrentXP += addXP;
     if(mCurrentXP >= mLevel * 1000){
         mCurrentXP -= mLevel * 1000;
