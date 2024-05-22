@@ -21,6 +21,7 @@ int main()
     Hero gameHero;
     Enemy gameEnemy;
     std::string heroName;
+    int heroPick;
     Manager Game(gameHero, gameEnemy, DB);
     Game.addEnemies();
 
@@ -31,7 +32,7 @@ int main()
             case 0:
                 std::cout << "Select an option:" << std::endl;
                 std::cout << "1: Start adventure with a new Hero! " << std::endl;
-                std::cout << "2: Continue an adventure with a Hero!" << std::endl;
+                std::cout << "2: Continue adventure with a Hero!" << std::endl;
                 std::cout << "3: Show Heros ready for adventure!" << std::endl;
                 std::cout << "4: Show Enemies for slaying!" << std::endl;
                 std::cout << "11: Exit" << std::endl;
@@ -44,17 +45,22 @@ int main()
                 std::cout << "Name your Hero: " << std::endl;
                 std::cin >> heroName;
                 gameHero = Hero(heroName);
+                Game.setHero(gameHero);
                 GameState = 5;
                 break;
 
             case 2:
-                std::cout << "You selected Option 2" << std::endl;
-                // Code for Option 2
+                std::cout << "Select a resting hero:" << std::endl;
+                Game.printHeros();
+                std::cin >> heroPick;
+                gameHero = Game.loadHero(heroPick);
+                Game.setHero(gameHero);
+                GameState = 5;
                 break;
 
             case 3:
-                std::cout << "You selected Option 3" << std::endl;
-                // Code for Option 3
+                Game.printHeros();
+                GameState = 0;
                 break;
 
             case 4:
@@ -64,7 +70,7 @@ int main()
 
             case 5:
                 std::cout << "Adventure options:" << std::endl;
-                std::cout << "1: Show available enemies" << std::endl;
+                std::cout << "1: Show available enemies for fighting: " << std::endl;
                 std::cout << "2: Show Hero stats" << std::endl;
                 std::cout << "3: Exit the adventure and save Hero" << std::endl;
                 std::cout << "4: Exit the adventure without saving" << std::endl;
@@ -89,6 +95,8 @@ int main()
                 }
                 else if (AdventureState == 3)
                 {
+                    Game.saveHero();
+                    return 1;
 
                 }
                 else if (AdventureState == 4)

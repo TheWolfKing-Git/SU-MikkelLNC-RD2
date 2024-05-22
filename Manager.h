@@ -3,6 +3,7 @@
 #include <QtSql>
 #include <QSqlDatabase>
 #include <QDebug>
+#include <QString>
 #include <iostream>
 
 #include "Enemy.h"
@@ -19,8 +20,9 @@ public:
     void printEnemies();
 
     //Hero handling
+    void setHero(Hero newHero);
     void saveHero();
-    void loadHero(int heroID);
+    Hero loadHero(int heroID);
     void printHeros();
 
 

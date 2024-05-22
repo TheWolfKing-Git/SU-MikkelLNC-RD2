@@ -7,12 +7,6 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
         mEnemy = enemy;
         mDB = gameDatabase;
 
-        //Setup database
-        /*
-        mDB.setHostName("localhost"); // Currently set to localhost
-        mDB.setUserName("sammy"); // Change to username
-        mDB.setPassword("password"); // Change to password*/
-
         //Check open connection
         if (!mDB.open()) {
             qDebug() << "Failed to connect to database:";
@@ -62,7 +56,7 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
         }
 
 }
-
+//------------------------------------------------ Enemy Handling --------------------------------------------------------
 void Manager::addEnemies()
 {
     //After DB creation, insert enemies
@@ -122,6 +116,100 @@ void Manager::printEnemies()
         << "DMG:" << dmg
         << "XP Reward:" << xpReward;
         std::cout << std::endl;
+    }
+}
+
+//------------------------------------------------ Hero handling --------------------------------------------------------
+void Manager::setHero(Hero newHero)
+{
+    mHero = newHero;
+}
+
+void Manager::saveHero(){
+
+    // Prepare the INSERT query for the Hero table
+    QString insertHeroQuery = "INSERT INTO Hero (Name, HP, DMG, Level, XP) VALUES (?, ?, ?, ?, ?)";
+    mGameQuery.prepare(insertHeroQuery);
+
+    // Set values for the hero's attributes
+    QString heroName = QString::fromStdString(mHero.getName()); //
+    int heroHP = mHero.getHP(); //
+    int heroDMG = mHero.getDMG(); //
+    int heroLevel = mHero.getLevel(); //
+    int heroXP = mHero.getCurrentXP(); //
+
+    // Bind values to the parameters
+    mGameQuery.addBindValue(heroName); // Name
+    mGameQuery.addBindValue(heroHP); // HP
+    mGameQuery.addBindValue(heroDMG); // DMG
+    mGameQuery.addBindValue(heroLevel); // Level
+    mGameQuery.addBindValue(heroXP); // XP
+
+    // Execute the query
+    if (!mGameQuery.exec()) {
+        qDebug() << "Failed to insert hero:";
+        qDebug() << mGameQuery.lastError().text();
+    }
+    // Success message
+    qDebug() << "Your hero takes a rest at the local inn, and is ready when you return!";
+}
+
+Hero Manager::loadHero(int heroID) {
+    // Prepare the SELECT query for retrieving the hero from the database based on ID
+    QString selectHeroQuery = "SELECT * FROM Hero WHERE ID = ?";
+    mGameQuery.prepare(selectHeroQuery);
+    mGameQuery.addBindValue(heroID); // Bind the hero's ID as a parameter
+
+    // Execute the query
+    if (!mGameQuery.exec()) {
+        qDebug() << "Failed to execute select query:";
+        qDebug() << mGameQuery.lastError().text();
+        return Hero();
+    }
+
+    // Check if any results were returned
+    if (mGameQuery.next())
+    {
+        // Extract hero's attributes from the query result
+        QString name = mGameQuery.value("Name").toString();
+        int hp = mGameQuery.value("HP").toInt();
+        int dmg = mGameQuery.value("DMG").toInt();
+        int level = mGameQuery.value("Level").toInt();
+        int xp = mGameQuery.value("XP").toInt();
+
+        // Construct a new instance of the hero using the retrieved attributes
+        Hero loadedHero(name.toStdString());
+        loadedHero.setHP(hp);
+        loadedHero.setDMG(dmg);
+        loadedHero.setLevel(level);
+        loadedHero.setXP(xp);
+        return loadedHero;
+
+    }
+    else
+    {
+        qDebug() << "No hero found with the ID:" << heroID;
+        return Hero();
+    }
+}
+
+void Manager::printHeros()
+{
+     // Execute the query
+    if (!mGameQuery.exec("SELECT * FROM Hero")) {
+        qDebug() << "Failed to execute select query:";
+        qDebug() << mGameQuery.lastError().text();
+    }
+
+    // Iterate over the results and print each hero's attributes
+    while (mGameQuery.next()) {
+        QString name = mGameQuery.value("Name").toString();
+        int hp = mGameQuery.value("HP").toInt();
+        int dmg = mGameQuery.value("DMG").toInt();
+        int level = mGameQuery.value("Level").toInt();
+        int xp = mGameQuery.value("XP").toInt();
+
+        qDebug() << "Name:" << name << "HP:" << hp << "DMG:" << dmg << "Level:" << level << "XP:" << xp;
     }
 }
 
