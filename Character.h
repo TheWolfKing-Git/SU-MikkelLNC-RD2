@@ -1,6 +1,7 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 #include <string>
+#include <iostream>
 
 
 class Character
@@ -24,7 +25,7 @@ public:
     //Take DMG
     void takeDMG(int incDMG);
 
-private:
+protected:
     int mHP;
     int mDMG;
     std::string mName;

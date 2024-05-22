@@ -6,6 +6,7 @@
 class Enemy : public Character
 {
 public:
+    //Constructors
     Enemy();
 
     //Getters
@@ -14,7 +15,7 @@ public:
     //Setters
     void setXPReward(int newXPReward);
 
-private:
+protected:
     int mXPReward;
 };
 

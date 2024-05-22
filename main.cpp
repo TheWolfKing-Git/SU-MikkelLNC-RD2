@@ -2,9 +2,18 @@
 #include <QtSql>
 #include <QSqlDatabase>
 #include <QDebug>
+#include <iostream>
+
+#include "Enemy.h"
+#include "Hero.h"
 
 int main()
 {
+    int GameState = 0;
+
+    Hero gameHero;
+    std::string heroName;
+
     //Setup database
     QSqlDatabase DB = QSqlDatabase::addDatabase("QMYSQL");
     DB.setHostName("localhost"); // Currently set to localhost
@@ -98,8 +107,44 @@ int main()
                 return 1; // Exit with error code
             }
         }
-
         gameQuery.clear(); // Clear the query object for the next iteration
+    }
+
+    while (true) {
+        std::cout << "Select an option:" << std::endl;
+        std::cout << "1: Start adventure with a new Hero! " << std::endl;
+        std::cout << "2: Continue an adventure with a Hero!" << std::endl;
+        std::cout << "3: Show Heros ready for adventure!" << std::endl;
+        std::cout << "4: Show Enemies for slaying!" << std::endl;
+        std::cout << "11: Exit" << std::endl;
+        std::cin >> GameState;
+
+        switch (GameState) {
+            case 1:
+                std::cout << "Starting new adventure!" << std::endl;
+                std::cout << "Name your Hero: " << std::endl;
+                std::cin >> heroName;
+                gameHero = Hero(heroName);
+                break;
+            case 2:
+                std::cout << "You selected Option 2" << std::endl;
+                // Code for Option 2
+                break;
+            case 3:
+                std::cout << "You selected Option 3" << std::endl;
+                // Code for Option 3
+                break;
+            case 4:
+                std::cout << "You selected Option 3" << std::endl;
+                // Code for Option 3
+                break;
+            case 11:
+                std::cout << "Exiting..." << std::endl;
+                return 0;
+            default:
+                std::cout << "Invalid option. Please try again." << std::endl;
+                break;
+        }
     }
 
     return 1;

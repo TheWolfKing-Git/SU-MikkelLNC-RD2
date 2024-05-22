@@ -5,7 +5,9 @@
 class Hero : public Character
 {
 public:
+    //Constructors
     Hero();
+    Hero(std::string newName);
 
     //Getters
     int getLevel() const;
@@ -16,9 +18,10 @@ public:
     void setXP(int newXP);
 
     //Functions
-    void addXP(int addXP);
+    void addXP(int addedXP);
+    void addLevel(int addedLevel);
 
-private:
+protected:
     int mLevel;
     int mCurrentXP;
 };

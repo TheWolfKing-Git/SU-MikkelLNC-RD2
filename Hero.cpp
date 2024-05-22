@@ -2,7 +2,20 @@
 
 Hero::Hero()
 {
+    mName = "Placeholder";
+    mHP = 10;
+    mDMG = 1;
+    mLevel = 1;
+    mCurrentXP = 0;
+}
 
+Hero::Hero(std::string newName)
+{
+    mName = newName;
+    mHP = 10;
+    mDMG = 1;
+    mLevel = 1;
+    mCurrentXP = 0;
 }
 
 //Getters
@@ -22,10 +35,18 @@ void Hero::setXP(int newXP){
 }
 
 //Functions
-void Hero::addXP(int addXP){
-    mCurrentXP += addXP;
+void Hero::addXP(int addedXP){
+    mCurrentXP += addedXP;
     if(mCurrentXP >= mLevel * 1000){
         mCurrentXP -= mLevel * 1000;
-        ++mLevel;
+        addLevel(1);
+        std::cout << "Your exprience shows and you gained a level!"
+                     "HP increased to: " << getHP() << "and DMG to: " << getDMG();
     }
+}
+
+void Hero::addLevel(int addedLevel){
+    mLevel += addedLevel;
+    mDMG += 1;
+    mHP += 2;
 }
