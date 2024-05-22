@@ -90,7 +90,7 @@ int main()
                 std::cout << "4: Exit the adventure without saving" << std::endl;
                 std::cin >> AdventureState;
 
-                //Show enemies!
+                //Show and fight an enemy!
                 if (AdventureState == 1)
                 {
                     std::cout << "Select an enemy to encounter:" << std::endl;
@@ -112,12 +112,14 @@ int main()
                     }
                     break;
                 }
+                //Print the stats on the hero
                 else if(AdventureState == 2)
                 {
                     Game.printHeroStats();
                     Game.printEnemyStats();
                     break;
                 }
+                //Save hero and go to main menu
                 else if (AdventureState == 3)
                 {
                     Game.saveHero();
@@ -125,10 +127,12 @@ int main()
                     break;
 
                 }
+                //Exit the program
                 else if (AdventureState == 4)
                 {
                     return 1;
                 }
+                //Else just to ensure player can reach menu again if a mistake is made
                 else
                 {
                     std::cout << "Not a vaild selection, returning..." << std::endl;
