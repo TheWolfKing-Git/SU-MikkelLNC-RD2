@@ -11,7 +11,7 @@ public:
 
     //Getters
     int getLevel() const;
-    int getCurrentXP() const;
+    int getCurrentXP();
     std::string getName() const;
 
     //Setters
@@ -22,7 +22,7 @@ public:
     //Functions
     void addXP(int addedXP);
     void addLevel(int addedLevel);
-    void getStats();
+    void resetHero();
 
 protected:
     int mLevel;

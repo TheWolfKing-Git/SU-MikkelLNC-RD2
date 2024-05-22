@@ -28,8 +28,8 @@ bool Character::isAlive() const{
 
 //Take DMG
 void Character::takeDMG(int incDMG){
-    if(incDMG < 0)
+    if(incDMG > 0)
         mHP -= incDMG;
-    else if(incDMG > 0)
+    else if(incDMG < 0)
         mHP += incDMG;
 }

@@ -16,14 +16,23 @@ public:
     Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase);
 
     //Enemy handling
+    void setEnemy(Enemy newEnemy);
     void addEnemies();
+    Enemy loadEnemy(int enemyID);
     void printEnemies();
+    void printEnemyStats();
+
 
     //Hero handling
     void setHero(Hero newHero);
     void saveHero();
     Hero loadHero(int heroID);
     void printHeros();
+    void printHeroStats();
+
+    //Fighting
+    int Encounter();
+    void nextPhase();
 
 
 private:

@@ -67,13 +67,20 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
 
 }
 //------------------------------------------------ Enemy Handling --------------------------------------------------------
+void Manager::setEnemy(Enemy newEnemy)
+{
+    mEnemy = newEnemy;
+}
+
 void Manager::addEnemies()
 {
     //After DB creation, insert enemies
     QList<QVariantList> enemies = {
-        {"Weak", 2, 1, 100},
-        {"Medium", 5, 2, 300},
-        {"Strong", 10, 5, 500}
+        {"Weak", 2, 1, 500},
+        {"Medium", 5, 2, 1000},
+        {"Strong", 10, 5, 5000},
+        {"Very Strong", 50, 20, 10000},
+        {"DEATH", 1000, 1000, 1}
     };
 
 
@@ -104,6 +111,45 @@ void Manager::addEnemies()
     }
 }
 
+Enemy Manager::loadEnemy(int enemyID) {
+
+    // Prepare the SELECT query for retrieving the enemy from the database based on ID
+    QString selectEnemyQuery = "SELECT * FROM Enemy WHERE ID = ?";
+    mGameQuery.prepare(selectEnemyQuery);
+    mGameQuery.addBindValue(enemyID); // Bind the enemy's ID as a parameter
+
+    // Execute the query
+    if (!mGameQuery.exec()) {
+        qDebug() << "Failed to execute select query:";
+        qDebug() << mGameQuery.lastError().text();
+        throw std::runtime_error("Failed to execute select query");
+    }
+
+    // Check if any results were returned
+    if (mGameQuery.next())
+    {
+        // Extract hero's attributes from the query result
+        QString name = mGameQuery.value("Name").toString();
+        int hp = mGameQuery.value("HP").toInt();
+        int dmg = mGameQuery.value("DMG").toInt();
+        int xpreward = mGameQuery.value("XPReward").toInt();
+
+
+        // Construct a new instance of the hero using the retrieved attributes
+        Enemy loadedEnemy(name.toStdString());
+        loadedEnemy.setHP(hp);
+        loadedEnemy.setDMG(dmg);
+        loadedEnemy.setXPReward(xpreward);
+        return loadedEnemy;
+
+    }
+    else
+    {
+        throw std::runtime_error("No enemy found with the specified ID");
+    }
+
+}
+
 void Manager::printEnemies()
 {
     if (!mGameQuery.exec("SELECT * FROM Enemy"))
@@ -113,20 +159,29 @@ void Manager::printEnemies()
     }
 
     // Print enemy vars
-    std::cout << "List of enemies:" << std::endl;
     while (mGameQuery.next())
     {
+        int id = mGameQuery.value("ID").toInt();
         QString name = mGameQuery.value("Name").toString();
         int hp = mGameQuery.value("HP").toInt();
         int dmg = mGameQuery.value("DMG").toInt();
         int xpReward = mGameQuery.value("XPReward").toInt();
         qDebug()
+        << "ID:" << id
         << "Enemy:" << name
         << "HP:" << hp
         << "DMG:" << dmg
         << "XP Reward:" << xpReward;
-        std::cout << std::endl;
     }
+}
+
+void Manager::printEnemyStats()
+{
+    std::cout << "---- Current Enemy ----" << std::endl;
+    std::cout << "Enemy name: " << mEnemy.getName() << std::endl
+              << "HP: " << mEnemy.getHP() << std::endl
+              << "DMG: " << mEnemy.getDMG() << std::endl
+              << "XP Reward: " << mEnemy.getXPReward() << std::endl;
 }
 
 //------------------------------------------------ Hero handling --------------------------------------------------------
@@ -147,19 +202,12 @@ void Manager::saveHero(){
                               "XP = :XP";
     mGameQuery.prepare(insertHeroQuery);
 
-    // Set values for the hero's attributes
-    QString heroName = QString::fromStdString(mHero.getName()); //
-    int heroHP = mHero.getHP(); //
-    int heroDMG = mHero.getDMG(); //
-    int heroLevel = mHero.getLevel(); //
-    int heroXP = mHero.getCurrentXP(); //
-
     // Bind values to the parameters
-    mGameQuery.addBindValue(heroName); // Name
-    mGameQuery.addBindValue(heroHP); // HP
-    mGameQuery.addBindValue(heroDMG); // DMG
-    mGameQuery.addBindValue(heroLevel); // Level
-    mGameQuery.addBindValue(heroXP); // XP
+    mGameQuery.bindValue(":Name", QString::fromStdString(mHero.getName()));
+    mGameQuery.bindValue(":HP", mHero.getHP());
+    mGameQuery.bindValue(":DMG", mHero.getDMG());
+    mGameQuery.bindValue(":Level", mHero.getLevel());
+    mGameQuery.bindValue(":XP", mHero.getCurrentXP());
 
     // Execute the query
     if (!mGameQuery.exec()) {
@@ -225,7 +273,64 @@ void Manager::printHeros()
         int level = mGameQuery.value("Level").toInt();
         int xp = mGameQuery.value("XP").toInt();
 
-        qDebug() << "ID:" << id << "Name:" << name << "HP:" << hp << "DMG:" << dmg << "Level:" << level << "XP:" << xp;
+        qDebug()
+        << "ID:" << id
+        << "Name:" << name
+        << "HP:" << hp
+        << "DMG:" << dmg
+        << "Level:" << level
+        << "XP:" << xp;
     }
 }
 
+void Manager::printHeroStats()
+{
+    std::cout << "---- Current Hero ----" << std::endl;
+    std::cout << "Enemy name: " << mHero.getName() << std::endl
+              << "HP: " << mHero.getHP() << std::endl
+              << "DMG: " << mHero.getDMG() << std::endl
+              << "Level: " << mHero.getLevel() << std::endl
+              << "XP Reward: " << mHero.getCurrentXP() << std::endl;
+}
+
+
+//------------------------------------------------ Fighting -------------------------------------------------------------
+void Manager::nextPhase()
+{
+    std::cout << "Press Enter to continue...";
+    std::cin.ignore();
+    std::cin.get();
+}
+
+int Manager::Encounter()
+{
+
+    //Return for state handling:
+    //Hero won: 10
+    //Enemy won: 20
+    //Error: -1
+    //std::cout << "Test: Try encounter" << std::endl;
+
+    while(mHero.isAlive() && mEnemy.isAlive()){
+
+        //std::cout << "Test: Enter fight loop" << std::endl;
+        printHeroStats();
+        printEnemyStats();
+
+        nextPhase();
+        mEnemy.takeDMG(mHero.getDMG());
+        if(!mEnemy.isAlive()){
+            //std::cout << "Test: Enemy dead" << std::endl;
+            mHero.resetHero();
+            mHero.addXP(mEnemy.getXPReward());
+            return 10;
+        }
+        mHero.takeDMG(mEnemy.getDMG());
+        if(!mHero.isAlive()){
+            mHero.resetHero();
+            return 20;
+        }
+
+    }
+    return -1;
+}

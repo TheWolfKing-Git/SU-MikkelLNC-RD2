@@ -19,13 +19,15 @@ int main()
     int AdventureState = 0;
 
     Hero gameHero;
+    Hero my_Hero;
     Enemy gameEnemy;
     std::string heroName;
+
     int heroPick;
+    int enemyPick;
+
     Manager Game(gameHero, gameEnemy, DB);
     Game.addEnemies();
-
-
 
     while (true) {
         switch (GameState) {
@@ -44,8 +46,8 @@ int main()
                 std::cout << "Starting new adventure!" << std::endl;
                 std::cout << "Name your Hero: " << std::endl;
                 std::cin >> heroName;
-                gameHero = Hero(heroName);
-                Game.setHero(gameHero);
+                my_Hero = Hero(heroName);
+                Game.setHero(my_Hero);
                 GameState = 5;
                 break;
 
@@ -54,17 +56,17 @@ int main()
                 Game.printHeros();
                 std::cin >> heroPick;
 
+                // Attempt to load the hero
                 try
                 {
-                    // Attempt to load the hero
                     gameHero = Game.loadHero(heroPick);
                     Game.setHero(gameHero);
                     GameState = 5;
                     break;
                 }
+                // Handle the case where no hero is found
                 catch (const std::runtime_error& e)
                 {
-                    // Handle the case where no hero is found
                     std::cerr << "Failed to load hero: " << e.what() << std::endl;
                     GameState = 0;
                     break;
@@ -91,28 +93,36 @@ int main()
                 //Show enemies!
                 if (AdventureState == 1)
                 {
+                    std::cout << "Select an enemy to encounter:" << std::endl;
                     Game.printEnemies();
+                    std::cin >> enemyPick;
+                    // Attempt to load the enemy
+                    try
+                    {
+                        gameEnemy = Game.loadEnemy(enemyPick);
+                        Game.setEnemy(gameEnemy);
+                        GameState = 6;
+                        break;
+                    }
+                    catch (const std::runtime_error& e)
+                    {
+                        std::cerr << "Failed to load enemy: " << e.what() << std::endl;
+                        GameState = 5;
+                        break;
+                    }
                     break;
                 }
                 else if(AdventureState == 2)
                 {
-                    /*
-                    std::cout << "---- Current Hero ----" << std::endl;
-                    std::cout << "Hero name: " << gameHero.getName() << std::endl
-                              << "HP: " << gameHero.getHP() << std::endl
-                              << "DMG: " << gameHero.getDMG() << std::endl
-                              << "Level: " << gameHero.getLevel() << std::endl
-                              << "XP: " << gameHero.getCurrentXP()
-                              << std::endl;
-                    */
-
-                    gameHero.getStats();
+                    Game.printHeroStats();
+                    Game.printEnemyStats();
                     break;
                 }
                 else if (AdventureState == 3)
                 {
                     Game.saveHero();
-                    return 1;
+                    GameState = 0;
+                    break;
 
                 }
                 else if (AdventureState == 4)
@@ -121,9 +131,29 @@ int main()
                 }
                 else
                 {
-
+                    std::cout << "Not a vaild selection, returning..." << std::endl;
+                    AdventureState = 0;
+                    GameState = 5;
+                    break;
                 }
-
+            case 6:
+                //10 = won, 20 = lost, -1 error;
+                GameState = Game.Encounter();
+                if(GameState == 10){
+                    std::cout << "You won the fight!" << std::endl;
+                    GameState = 5;
+                    break;
+                }
+                else if(GameState == 20){
+                    std::cout << "You lost the fight... Train against weaker enemies!" << std::endl;
+                    GameState = 5;
+                    break;
+                }
+                else if(GameState == -1){
+                    std::cout << "An error has occured!" << std::endl;
+                    GameState = 5;
+                    break;
+                }
 
             case 11:
                 std::cout << "Exiting..." << std::endl;
@@ -131,6 +161,7 @@ int main()
 
             default:
                 std::cout << "Invalid option. Please try again." << std::endl;
+                GameState = 0;
                 break;
         }
     }

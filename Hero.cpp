@@ -22,7 +22,7 @@ Hero::Hero(std::string newName)
 int Hero::getLevel() const{
     return mLevel;
 }
-int Hero::getCurrentXP() const{
+int Hero::getCurrentXP(){
     return mCurrentXP;
 }
 std::string Hero::getName() const{
@@ -43,11 +43,13 @@ void Hero::setName(std::string newName){
 //Functions
 void Hero::addXP(int addedXP){
     mCurrentXP += addedXP;
-    if(mCurrentXP >= mLevel * 1000){
-        mCurrentXP -= mLevel * 1000;
+    if(mCurrentXP > mLevel*1000){
+        mCurrentXP -= (mLevel * 1000);
         addLevel(1);
-        std::cout << "Your exprience shows and you gained a level!"
-                     "HP increased to: " << getHP() << "and DMG to: " << getDMG();
+        std::cout << "Your exprience shows and you gained a level!" << std::endl;
+        std::cout <<"Level increased from: " << getLevel()-1 << " to " << getLevel() << std::endl;
+        std::cout <<"HP increased to: " << getHP() << std::endl;
+        std::cout <<"DMG increased to: " << getDMG() << std::endl;
     }
 }
 
@@ -57,13 +59,7 @@ void Hero::addLevel(int addedLevel){
     mHP += 2;
 }
 
-void Hero::getStats()
-{
-    std::cout << "---- Current Hero ----" << std::endl;
-    std::cout << "Hero name: " << getName() << std::endl
-              << "HP: " << getHP() << std::endl
-              << "DMG: " << getDMG() << std::endl
-              << "Level: " << getLevel() << std::endl
-              << "XP: " << getCurrentXP()
-              << std::endl;
+void Hero::resetHero(){
+    mHP = 10+(mLevel*2-2);
 }
+
