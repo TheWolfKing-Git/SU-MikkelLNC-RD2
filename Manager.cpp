@@ -76,7 +76,13 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
             qDebug() << mGameQuery.lastError().text();
         }
 
-        //Create table for enemies in each cave: CaveEnemies
+
+        //Drop CaveEnemies, to ensure fresh table. Create after drop.
+        QString dropTB4 = "DROP TABLE IF EXISTS CaveEnemies";
+        if (!mGameQuery.exec(dropTB4)) {
+            qDebug() << "Failed to drop CaveEnemies table:";
+            qDebug() << mGameQuery.lastError().text();
+        }
         QString createTB4 = "CREATE TABLE IF NOT EXISTS CaveEnemies ("
                             "ID INT AUTO_INCREMENT PRIMARY KEY,"
                             "CaveID INT,"
@@ -341,8 +347,9 @@ void Manager::addCavesToGame() {
 
         // Execute the query
         if (!mGameQuery.exec()) {
-            qDebug() << "Failed to insert cave:";
-            qDebug() << mGameQuery.lastError().text();
+            //qDebug() << "Failed to insert cave:";
+            //qDebug() << mGameQuery.lastError().text();
+            return;
         }
     }
 
@@ -386,6 +393,75 @@ void Manager::addEnemiesToCaves()
     }
 }
 
+void Manager::printCaves()
+{
+    if (!mGameQuery.exec("SELECT * FROM Caves"))
+    {
+        qDebug() << "Failed to execute query:" << mGameQuery.lastError().text();
+        return;
+
+    }
+
+    // Print cave values.
+    while (mGameQuery.next())
+    {
+        int id = mGameQuery.value("CaveID").toInt();
+        QString name = mGameQuery.value("Name").toString();
+        int goldreward = mGameQuery.value("GoldReward").toInt();
+        qDebug()
+        << "ID:" << id
+        << "Enemy:" << name
+        << "Gold Reward:" << goldreward;
+    }
+}
+
+void Manager::printCaveEnemies(int caveID)
+{
+    // Prepare the SELECT query to get the specific cave by CaveID
+    QString selectCaveQuery = "SELECT CaveID, Name FROM Caves WHERE CaveID = :CaveID";
+    mGameQuery.prepare(selectCaveQuery);
+    mGameQuery.bindValue(":CaveID", caveID);
+
+    // Execute the query
+    if (!mGameQuery.exec()) {
+        qDebug() << "Failed to retrieve data from Caves table for Cave ID" << caveID << ":";
+        qDebug() << mGameQuery.lastError().text();
+        return;
+    }
+
+    // Check if the cave exists
+    if (mGameQuery.next()) {
+        QString name = mGameQuery.value("Name").toString();
+
+        std::cout << "Cave ID: " << caveID << "\n";
+        std::cout << "Name: " << name.toStdString() << "\n";
+        std::cout << "Enemies: ";
+
+        // Prepare the SELECT query to get enemies for the specific cave
+        QString selectEnemiesQuery = "SELECT Enemy.Name FROM Enemy "
+                                     "INNER JOIN CaveEnemies ON Enemy.ID = CaveEnemies.EnemyID "
+                                     "WHERE CaveEnemies.CaveID = :CaveID";
+        QSqlQuery enemyQuery;
+        enemyQuery.prepare(selectEnemiesQuery);
+        enemyQuery.bindValue(":CaveID", caveID);
+
+        // Execute the query to get enemies for the specific cave
+        if (!enemyQuery.exec()) {
+            qDebug() << "Failed to retrieve data from CaveEnemies table for Cave ID" << caveID << ":";
+            qDebug() << enemyQuery.lastError().text();
+            return;
+        }
+
+        // Fetch and print each enemy's name for the specific cave
+        while (enemyQuery.next()) {
+            QString enemyName = enemyQuery.value("Name").toString();
+            std::cout << enemyName.toStdString() << ", ";
+        }
+        std::cout << "\n---------------------\n";
+    } else {
+        std::cout << "Cave ID " << caveID << " does not exist.\n";
+    }
+}
 
 //------------------------------------------------ Fighting -------------------------------------------------------------
 void Manager::nextPhase()

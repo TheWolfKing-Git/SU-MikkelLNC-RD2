@@ -25,6 +25,7 @@ int main()
 
     int heroPick;
     int enemyPick;
+    int cavePick;
 
     Manager Game(gameHero, gameEnemy, DB);
     Game.addEnemies();
@@ -86,10 +87,11 @@ int main()
 
             case 5:
                 std::cout << "Adventure options:" << std::endl;
-                std::cout << "1: Show available enemies for fighting: " << std::endl;
-                std::cout << "2: Show Hero stats" << std::endl;
-                std::cout << "3: Exit the adventure and save Hero" << std::endl;
-                std::cout << "4: Exit the adventure without saving" << std::endl;
+                std::cout << "1: Show available enemies for fighting" << std::endl;
+                std::cout << "2: Show caves for conquering" << std::endl;
+                std::cout << "3: Show Hero stats" << std::endl;
+                std::cout << "9: Exit the adventure and save Hero" << std::endl;
+                std::cout << "11: Exit the adventure without saving" << std::endl;
                 std::cin >> AdventureState;
 
                 //Show and fight an enemy!
@@ -103,7 +105,7 @@ int main()
                     {
                         gameEnemy = Game.loadEnemy(enemyPick);
                         Game.setEnemy(gameEnemy);
-                        GameState = 6;
+                        GameState = 100;
                         break;
                     }
                     catch (const std::runtime_error& e)
@@ -114,15 +116,25 @@ int main()
                     }
                     break;
                 }
-                //Print the stats on the hero
                 else if(AdventureState == 2)
                 {
+                    std::cout << "Select a cave to conquer: " << std::endl;
+                    Game.printCaves();
+                    std::cin >> cavePick;;
+                    std::cout << "These are your foes: " << std::endl;
+                    Game.printCaveEnemies(cavePick);
+                    GameState = 5;
+                    break;
+
+                }
+                //Print the stats on the hero
+                else if(AdventureState == 3)
+                {
                     Game.printHeroStats();
-                    Game.printEnemyStats();
                     break;
                 }
                 //Save hero and go to main menu
-                else if (AdventureState == 3)
+                else if (AdventureState == 9)
                 {
                     Game.saveHero();
                     GameState = 0;
@@ -130,7 +142,7 @@ int main()
 
                 }
                 //Exit the program
-                else if (AdventureState == 4)
+                else if (AdventureState == 11)
                 {
                     return 1;
                 }
@@ -142,7 +154,12 @@ int main()
                     GameState = 5;
                     break;
                 }
-            case 6:
+
+            case 11:
+                std::cout << "Exiting..." << std::endl;
+                return 0;
+
+            case 100:
                 //10 = won, 20 = lost, -1 error;
                 GameState = Game.Encounter();
                 if(GameState == 10){
@@ -160,10 +177,6 @@ int main()
                     GameState = 5;
                     break;
                 }
-
-            case 11:
-                std::cout << "Exiting..." << std::endl;
-                return 0;
 
             default:
                 std::cout << "Invalid option. Please try again." << std::endl;

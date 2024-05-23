@@ -32,6 +32,8 @@ public:
     //Cave handling
     void addCavesToGame();
     void addEnemiesToCaves();
+    void printCaves();
+    void printCaveEnemies(int caveID);
 
     //Fighting
     int Encounter();
