@@ -65,6 +65,29 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
             qDebug() << mGameQuery.lastError().text();
         }
 
+        // Create table for Caves
+        QString createTB3 = "CREATE TABLE IF NOT EXISTS Caves ("
+                            "CaveID INT AUTO_INCREMENT PRIMARY KEY,"
+                            "Name VARCHAR(255) UNIQUE,"
+                            "GoldReward INT"
+                            ")";
+        if (!mGameQuery.exec(createTB3)) {
+            qDebug() << "Failed to create Caves table:";
+            qDebug() << mGameQuery.lastError().text();
+        }
+
+        //Create table for enemies in each cave: CaveEnemies
+        QString createTB4 = "CREATE TABLE IF NOT EXISTS CaveEnemies ("
+                            "ID INT AUTO_INCREMENT PRIMARY KEY,"
+                            "CaveID INT,"
+                            "EnemyID INT,"
+                            "FOREIGN KEY (CaveID) REFERENCES Caves(CaveID),"
+                            "FOREIGN KEY (EnemyID) REFERENCES Enemy(ID)"
+                            ")";
+        if (!mGameQuery.exec(createTB4)) {
+            qDebug() << "Failed to create CaveEnemies table:";
+            qDebug() << mGameQuery.lastError().text();
+        }
 }
 //------------------------------------------------ Enemy Handling --------------------------------------------------------
 void Manager::setEnemy(Enemy newEnemy)
@@ -293,6 +316,74 @@ void Manager::printHeroStats()
               << "DMG: " << mHero.getDMG() << std::endl
               << "Level: " << mHero.getLevel() << std::endl
               << "XP Reward: " << mHero.getCurrentXP() << std::endl;
+}
+
+//------------------------------------------------ Cave handling -------------------------------------------------------------
+
+void Manager::addCavesToGame() {
+    // List of caves with name and gold reward
+    QList<QVariantList> caves = {
+        {"Peaceful clearing", 1000},
+        {"Harsh Garden", 2000},
+        {"Dark Grotto", 3000},
+        {"Biting Glacier", 4000},
+        {"Mount Drago", 5000}
+    };
+
+    // Prepare the INSERT query for the Caves table
+    QString insertCaveQuery = "INSERT INTO Caves (Name, GoldReward) VALUES (:Name, :GoldReward)";
+    mGameQuery.prepare(insertCaveQuery);
+
+    // Loop through each cave and add it to the database
+    for (const auto& cave : caves) {
+        mGameQuery.bindValue(":Name", cave[0].toString()); // Name
+        mGameQuery.bindValue(":GoldReward", cave[1].toInt()); // Gold reward
+
+        // Execute the query
+        if (!mGameQuery.exec()) {
+            qDebug() << "Failed to insert cave:";
+            qDebug() << mGameQuery.lastError().text();
+        }
+    }
+
+    qDebug() << "Caves added to the game successfully.";
+}
+
+void Manager::addEnemiesToCaves()
+{
+    // List of caves with CaveID and 3 enemies
+    QList<QVariantList> rosters = {
+        {1, 1, 1, 2},
+        {2, 1, 2, 2},
+        {3, 1, 2, 2},
+        {4, 2, 2, 2},
+        {5, 2, 2, 3},
+    };
+
+    // Prepare the INSERT query for the CaveEnemies table
+    QString insertCaveEnemiesQuery = "INSERT INTO CaveEnemies (CaveID, EnemyID) "
+                                     "VALUES (:CaveID, :EnemyID)";
+    mGameQuery.prepare(insertCaveEnemiesQuery);
+
+    // Loop through each cave and its associated enemies
+    for (const auto& roster : rosters) {
+        int caveID = roster[0].toInt();
+        for (int i = 1; i < roster.size(); ++i) {
+            int enemyID = roster[i].toInt();
+
+            // Bind values to the parameters for the current cave and enemy
+            mGameQuery.bindValue(":CaveID", caveID);
+            mGameQuery.bindValue(":EnemyID", enemyID);
+
+            // Execute the query
+            if (!mGameQuery.exec()) {
+                qDebug() << "Failed to insert data into CaveEnemies table for Cave" << caveID << "and Enemy" << enemyID << ":";
+                qDebug() << mGameQuery.lastError().text();
+            }
+        }
+
+        //qDebug() << "Data inserted into CaveEnemies table for Cave" << caveID << "successfully.";
+    }
 }
 
 

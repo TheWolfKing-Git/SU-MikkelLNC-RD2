@@ -28,6 +28,8 @@ int main()
 
     Manager Game(gameHero, gameEnemy, DB);
     Game.addEnemies();
+    Game.addCavesToGame();
+    Game.addEnemiesToCaves();
 
     while (true) {
         switch (GameState) {

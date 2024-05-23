@@ -22,13 +22,16 @@ public:
     void printEnemies();
     void printEnemyStats();
 
-
     //Hero handling
     void setHero(Hero newHero);
     void saveHero();
     Hero loadHero(int heroID);
     void printHeros();
     void printHeroStats();
+
+    //Cave handling
+    void addCavesToGame();
+    void addEnemiesToCaves();
 
     //Fighting
     int Encounter();
