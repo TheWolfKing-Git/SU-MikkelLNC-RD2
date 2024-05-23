@@ -7,6 +7,7 @@ Hero::Hero()
     mDMG = 1;
     mLevel = 1;
     mCurrentXP = 0;
+    mGold = 0;
 }
 
 Hero::Hero(std::string newName)
@@ -16,6 +17,7 @@ Hero::Hero(std::string newName)
     mDMG = 1;
     mLevel = 1;
     mCurrentXP = 0;
+    mGold = 0;
 }
 
 //Getters

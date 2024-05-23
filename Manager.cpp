@@ -45,7 +45,8 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
                 "HP INT,"
                 "DMG INT,"
                 "Level INT,"
-                "XP INT"
+                "XP INT,"
+                "Gold INT"
                 ")";
         if (!mGameQuery.exec(createTB1)) {
             qDebug() << "Failed to create Hero table:";
@@ -224,13 +225,14 @@ void Manager::setHero(Hero newHero)
 void Manager::saveHero(){
 
     // Prepare the INSERT query for the Hero table
-    QString insertHeroQuery = "INSERT INTO Hero (Name, HP, DMG, Level, XP) "
-                              "VALUES (:Name, :HP, :DMG, :Level, :XP)"
+    QString insertHeroQuery = "INSERT INTO Hero (Name, HP, DMG, Level, XP, Gold) "
+                              "VALUES (:Name, :HP, :DMG, :Level, :XP, :Gold)"
                               "ON DUPLICATE KEY UPDATE "
                               "HP = :HP,"
                               "DMG = :DMG,"
                               "Level = :Level,"
-                              "XP = :XP";
+                              "XP = :XP,"
+                              "Gold = :Gold";
     mGameQuery.prepare(insertHeroQuery);
 
     // Bind values to the parameters
@@ -239,6 +241,7 @@ void Manager::saveHero(){
     mGameQuery.bindValue(":DMG", mHero.getDMG());
     mGameQuery.bindValue(":Level", mHero.getLevel());
     mGameQuery.bindValue(":XP", mHero.getCurrentXP());
+    mGameQuery.bindValue(":Gold", mHero.getGold());
 
     // Execute the query
     if (!mGameQuery.exec()) {
@@ -271,6 +274,7 @@ Hero Manager::loadHero(int heroID) {
         int dmg = mGameQuery.value("DMG").toInt();
         int level = mGameQuery.value("Level").toInt();
         int xp = mGameQuery.value("XP").toInt();
+        int gold = mGameQuery.value("Gold").toInt();
 
         // Construct a new instance of the hero using the retrieved attributes
         Hero loadedHero(name.toStdString());
@@ -278,6 +282,7 @@ Hero Manager::loadHero(int heroID) {
         loadedHero.setDMG(dmg);
         loadedHero.setLevel(level);
         loadedHero.setXP(xp);
+        loadedHero.setGold(gold);
         return loadedHero;
 
     }
@@ -303,6 +308,7 @@ void Manager::printHeros()
         int dmg = mGameQuery.value("DMG").toInt();
         int level = mGameQuery.value("Level").toInt();
         int xp = mGameQuery.value("XP").toInt();
+        int gold = mGameQuery.value("Gold").toInt();
 
         qDebug()
         << "ID:" << id
@@ -310,7 +316,8 @@ void Manager::printHeros()
         << "HP:" << hp
         << "DMG:" << dmg
         << "Level:" << level
-        << "XP:" << xp;
+        << "XP:" << xp
+        << "Gold:" << gold;
     }
 }
 
@@ -321,7 +328,8 @@ void Manager::printHeroStats()
               << "HP: " << mHero.getHP() << std::endl
               << "DMG: " << mHero.getDMG() << std::endl
               << "Level: " << mHero.getLevel() << std::endl
-              << "XP Reward: " << mHero.getCurrentXP() << std::endl;
+              << "XP: " << mHero.getCurrentXP() << std::endl
+              << "Gold: " << mHero.getGold() << std::endl;
 }
 
 //------------------------------------------------ Cave handling -------------------------------------------------------------
@@ -353,7 +361,7 @@ void Manager::addCavesToGame() {
         }
     }
 
-    qDebug() << "Caves added to the game successfully.";
+    //qDebug() << "Caves added to the game successfully.";
 }
 
 void Manager::addEnemiesToCaves()
