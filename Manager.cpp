@@ -94,15 +94,17 @@ void Manager::addEnemies()
         //Execute the query
         if (!mGameQuery.exec()) {
 
-            // Check if the error is due to a duplicate entry
+            //Skip duplicate entires (Database and table already exsists)
             if (mGameQuery.lastError().number() == 1062) // MySQL error code for duplicate entry
             {
-                qDebug() << "Skipping duplicate entry for enemy:" << enemy[0].toString();
+                //Output MSG for duplicates
+                //qDebug() << "TEST - Skipping duplicate entry for enemy:" << enemy[0].toString();
                 mGameQuery.clear(); // Clear the query object for the next iteration
                 continue; // Skip to the next iteration
             }
             else
             {
+                //Other error than 1062???
                 qDebug() << "Failed to insert enemy:";
                 qDebug() << mGameQuery.lastError().text();
             }
