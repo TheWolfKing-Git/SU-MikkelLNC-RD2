@@ -465,9 +465,76 @@ void Manager::printCaveEnemies(int caveID)
             QString enemyName = enemyQuery.value("Name").toString();
             std::cout << enemyName.toStdString() << ", ";
         }
-        std::cout << "\n---------------------\n";
-    } else {
+        std::cout << std::endl;
+    }
+    else
+    {
         std::cout << "Cave ID " << caveID << " does not exist.\n";
+    }
+}
+
+QList<int> Manager::getEnemiesForCave(int caveID){
+
+    QList<int> enemyIDs;
+
+    QString getEnemiesFromCaveQuery = "SELECT EnemyID FROM CaveEnemies WHERE CaveID = :CaveID";
+    mGameQuery.prepare(getEnemiesFromCaveQuery);
+    mGameQuery.bindValue(":CaveID", caveID);
+
+    if (mGameQuery.exec()) {
+        while (mGameQuery.next()) {
+            enemyIDs.append(mGameQuery.value(0).toInt());
+        }
+    } else {
+        qDebug() << "Failed to retrieve enemies for Cave" << caveID << ":";
+        qDebug() << mGameQuery.lastError().text();
+    }
+
+    return enemyIDs;
+}
+
+int Manager::getGoldFromCave(int caveID)
+{
+    // Prepare the SELECT query to fetch the gold reward for the specified cave ID
+    QString selectGoldQuery = "SELECT GoldReward FROM Caves WHERE CaveID = :CaveID";
+    mGameQuery.prepare(selectGoldQuery);
+    mGameQuery.bindValue(":CaveID", caveID);
+
+    // Execute the query
+    if (mGameQuery.exec() && mGameQuery.next())
+    {
+        // Retrieve the gold reward from the query result
+        int goldReward = mGameQuery.value(0).toInt();
+        return goldReward;
+    }
+    else
+    {
+        // Failed to execute the query or fetch the result
+        qDebug() << "Failed to fetch gold reward for cave" << caveID << ":";
+        qDebug() << mGameQuery.lastError().text();
+        return -1; // Return a default value indicating failure
+    }
+}
+
+void Manager::addGoldFromCave(int caveID)
+{
+    // Prepare the SELECT query to fetch the gold reward for the specified cave ID and add it to the player.
+    QString selectGoldQuery = "SELECT GoldReward FROM Caves WHERE CaveID = :CaveID";
+    mGameQuery.prepare(selectGoldQuery);
+    mGameQuery.bindValue(":CaveID", caveID);
+
+    // Execute the query
+    if (mGameQuery.exec() && mGameQuery.next())
+    {
+        //Add the gold to the hero
+        mHero.addGold(mGameQuery.value(0).toInt());
+
+    }
+    else
+    {
+        // Failed to execute the query or fetch the result
+        qDebug() << "Failed to fetch gold reward for cave" << caveID << ":";
+        qDebug() << mGameQuery.lastError().text();
     }
 }
 

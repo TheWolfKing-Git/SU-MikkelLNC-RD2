@@ -26,6 +26,8 @@ int main()
     int heroPick;
     int enemyPick;
     int cavePick;
+    QList<int> cavePickedEnemies;
+    int caveGold;
 
     Manager Game(gameHero, gameEnemy, DB);
     Game.addEnemies();
@@ -123,7 +125,9 @@ int main()
                     std::cin >> cavePick;;
                     std::cout << "These are your foes: " << std::endl;
                     Game.printCaveEnemies(cavePick);
-                    GameState = 5;
+                    cavePickedEnemies = Game.getEnemiesForCave(cavePick);
+                    caveGold = Game.getGoldFromCave(cavePick);
+                    GameState = 110;
                     break;
 
                 }
@@ -177,6 +181,37 @@ int main()
                     GameState = 5;
                     break;
                 }
+
+            case 110:
+                //10 = won, 20 = lost, -1 error,
+                std::cout << "You arrive in the cave and start the struggle!" << std::endl;
+                foreach(int enemyIDs, cavePickedEnemies)
+                {
+                    gameEnemy = Game.loadEnemy(enemyIDs);
+                    Game.setEnemy(gameEnemy);
+                    GameState = Game.Encounter();
+                    if(GameState == 10)
+                    {
+                        std::cout << "You won the fight against enemy# " << enemyIDs<< std::endl;
+                        std::cout << "The fight continues!" << std::endl;
+                    }
+                    else if(GameState == 20)
+                    {
+                        std::cout << "You lost the fight... Train against weaker enemies!" << std::endl;
+                        GameState = 5;
+                        break;
+                    }
+                    else if(GameState == -1)
+                    {
+                        std::cout << "An error has occured in cave fight!" << std::endl;
+                        GameState = 5;
+                        break;
+                    }
+                }
+                std::cout << "You won the cave fight! " << caveGold << " gold has been added to your purse!" <<std::endl;
+                Game.addGoldFromCave(cavePick);
+                GameState = 5;
+                break;
 
             default:
                 std::cout << "Invalid option. Please try again." << std::endl;

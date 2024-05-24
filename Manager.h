@@ -34,6 +34,10 @@ public:
     void addEnemiesToCaves();
     void printCaves();
     void printCaveEnemies(int caveID);
+    QList<int> getEnemiesForCave(int caveID);
+    int getGoldFromCave(int caveID);
+    void addGoldFromCave(int caveID);
+
 
     //Fighting
     int Encounter();
