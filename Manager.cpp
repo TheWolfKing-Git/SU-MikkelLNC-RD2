@@ -481,11 +481,15 @@ QList<int> Manager::getEnemiesForCave(int caveID){
     mGameQuery.prepare(getEnemiesFromCaveQuery);
     mGameQuery.bindValue(":CaveID", caveID);
 
-    if (mGameQuery.exec()) {
-        while (mGameQuery.next()) {
+    if (mGameQuery.exec())
+    {
+        while (mGameQuery.next())
+        {
             enemyIDs.append(mGameQuery.value(0).toInt());
         }
-    } else {
+    }
+    else
+    {
         qDebug() << "Failed to retrieve enemies for Cave" << caveID << ":";
         qDebug() << mGameQuery.lastError().text();
     }

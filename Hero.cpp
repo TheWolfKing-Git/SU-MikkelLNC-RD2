@@ -30,9 +30,11 @@ int Hero::getCurrentXP() const{
 std::string Hero::getName() const{
     return mName;
 }
-
 int Hero::getGold() const{
     return mGold;
+}
+int Hero::getMana() const{
+    return mMana;
 }
 
 //Setters
@@ -47,6 +49,9 @@ void Hero::setName(std::string newName){
 }
 void Hero::setGold(int newGold){
     mGold = newGold;
+}
+void Hero::setMana(int newMana){
+    mMana = newMana;
 }
 
 //Functions
@@ -66,6 +71,7 @@ void Hero::addLevel(int addedLevel){
     mLevel += addedLevel;
     mDMG += 1;
     mHP += 2;
+    mMana += 2;
 }
 
 void Hero::resetHero(){
@@ -76,3 +82,6 @@ void Hero::addGold(int addedGold){
     mGold += addedGold;
 }
 
+void Hero::addMana(int addedMana){
+    mMana += addedMana;
+}
