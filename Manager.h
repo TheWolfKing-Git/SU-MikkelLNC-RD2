@@ -38,10 +38,14 @@ public:
     int getGoldFromCave(int caveID);
     void addGoldFromCave(int caveID);
 
-
     //Fighting
     int Encounter();
     void nextPhase();
+
+    //Magic
+    void addMagics();
+    Magic loadMagic(int magicID);
+    void printMagics();
 
 
 private:

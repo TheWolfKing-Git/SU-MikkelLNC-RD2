@@ -33,6 +33,7 @@ int main()
     Game.addEnemies();
     Game.addCavesToGame();
     Game.addEnemiesToCaves();
+    Game.addMagics();
 
     while (true) {
         switch (GameState) {

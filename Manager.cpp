@@ -95,6 +95,28 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
             qDebug() << "Failed to create CaveEnemies table:";
             qDebug() << mGameQuery.lastError().text();
         }
+
+        QString dropTB5 = "DROP TABLE IF EXISTS Magic";
+        if (!mGameQuery.exec(dropTB5)) {
+            qDebug() << "Failed to drop Magic table:";
+            qDebug() << mGameQuery.lastError().text();
+        }
+        // Create table for Magic
+        QString createTB5 = "CREATE TABLE IF NOT EXISTS Magic ("
+                            "ID INT AUTO_INCREMENT PRIMARY KEY,"
+                            "Name VARCHAR(255) UNIQUE,"
+                            "DMG INT,"
+                            "SelfDMG INT,"
+                            "Element VARCHAR(255),"
+                            "Strengt VARCHAR(255),"
+                            "Weakness VARCHAR(255),"
+                            "ManaCost INT,"
+                            "GoldCost INT"
+                            ")";
+        if (!mGameQuery.exec(createTB5)) {
+            qDebug() << "Failed to create Magic table:";
+            qDebug() << mGameQuery.lastError().text();
+        }
 }
 //------------------------------------------------ Enemy Handling --------------------------------------------------------
 void Manager::setEnemy(Enemy newEnemy)
@@ -581,4 +603,127 @@ int Manager::Encounter()
 
     }
     return -1;
+}
+
+//------------------------------------------------ Magic -------------------------------------------------------------
+void Manager::addMagics()
+{
+    // After DB creation, insert magics
+    QList<QVariantList> magics = {
+        {1, "Fireball", 5, 3, "Fire", "Metal", "Water", 10, 100},
+        {2, "Rocksmash", 5, 3, "Earth", "Water", "Forest", 10, 100},
+        {3, "Shard Rain", 5, 3, "Metal", "Forest", "Fire", 10, 100},
+        {4, "Tsunami", 5, 3, "Water", "Fire", "Earth", 10, 100},
+        {5, "Root Crush", 5, 3, "Forest", "Earth", "Metal", 10, 100}
+    };
+
+    for (const auto& magic : magics) {
+        mGameQuery.prepare("INSERT INTO Magic (ID, Name, DMG, SelfDMG, Element, Strengt, Weakness, ManaCost, GoldCost) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        mGameQuery.addBindValue(magic[0]); // ID
+        mGameQuery.addBindValue(magic[1]); // Name
+        mGameQuery.addBindValue(magic[2]); // DMG
+        mGameQuery.addBindValue(magic[3]); // SelfDMG
+        mGameQuery.addBindValue(magic[4]); // Element
+        mGameQuery.addBindValue(magic[5]); // Strength
+        mGameQuery.addBindValue(magic[6]); // Weakness
+        mGameQuery.addBindValue(magic[7]); // ManaCost
+        mGameQuery.addBindValue(magic[8]); // GoldCost
+
+        // Execute the query
+        if (!mGameQuery.exec()) {
+            // Skip duplicate entries
+            if (mGameQuery.lastError().number() == 1062) // MySQL error code for duplicate entry
+            {
+                // Skip to the next iteration
+                mGameQuery.clear(); // Clear the query object for the next iteration
+                continue;
+            }
+            else
+            {
+                qDebug() << "Failed to insert magic:";
+                qDebug() << mGameQuery.lastError().text();
+            }
+        }
+        mGameQuery.clear(); // Clear the query object for the next iteration
+    }
+}
+
+Magic Manager::loadMagic(int magicID)
+{
+    // Prepare the SELECT query for retrieving the magic from the database based on ID
+    QString selectMagicQuery = "SELECT * FROM Magic WHERE ID = ?";
+    mGameQuery.prepare(selectMagicQuery);
+    mGameQuery.addBindValue(magicID); // Bind the magic's ID as a parameter
+
+    // Execute the query
+    if (!mGameQuery.exec()) {
+        qDebug() << "Failed to execute select query:";
+        qDebug() << mGameQuery.lastError().text();
+        throw std::runtime_error("Failed to execute select query");
+    }
+
+    // Check if any results were returned
+    if (mGameQuery.next())
+    {
+        // Extract magic's attributes from the query result
+        int id = mGameQuery.value("ID").toInt();
+        QString name = mGameQuery.value("Name").toString();
+        int dmg = mGameQuery.value("DMG").toInt();
+        int selfDmg = mGameQuery.value("SelfDMG").toInt();
+        QString element = mGameQuery.value("Element").toString();
+        QString strengt = mGameQuery.value("Strengt").toString();
+        QString weakness = mGameQuery.value("Weakness").toString();
+        int manaCost = mGameQuery.value("ManaCost").toInt();
+        int goldCost = mGameQuery.value("GoldCost").toInt();
+
+        // Construct a new instance of the magic using the retrieved attributes
+        Magic loadedMagic;
+        loadedMagic.setID(id);
+        loadedMagic.setName(name.toStdString());
+        loadedMagic.setDMG(dmg);
+        loadedMagic.setSelfDMG(selfDmg);
+        loadedMagic.setElement(element.toStdString());
+        loadedMagic.setStrength(strengt.toStdString());
+        loadedMagic.setWeakness(weakness.toStdString());
+        loadedMagic.setManaCost(manaCost);
+        loadedMagic.setGoldCost(goldCost);
+        return loadedMagic;
+    }
+    else
+    {
+        throw std::runtime_error("No magic found with the specified ID");
+    }
+}
+
+void Manager::printMagics()
+{
+    if (!mGameQuery.exec("SELECT * FROM Magic"))
+    {
+        qDebug() << "Failed to execute query:" << mGameQuery.lastError().text();
+    }
+
+    // Print magic vars
+    while (mGameQuery.next())
+    {
+        int id = mGameQuery.value("ID").toInt();
+        QString name = mGameQuery.value("Name").toString();
+        int dmg = mGameQuery.value("DMG").toInt();
+        int selfDmg = mGameQuery.value("SelfDMG").toInt();
+        QString element = mGameQuery.value("Element").toString();
+        QString strengt = mGameQuery.value("Strengt").toString();
+        QString weakness = mGameQuery.value("Weakness").toString();
+        int manaCost = mGameQuery.value("ManaCost").toInt();
+        int goldCost = mGameQuery.value("GoldCost").toInt();
+
+        qDebug()
+        << "ID:" << id
+        << "Name:" << name
+        << "DMG:" << dmg
+        << "SelfDMG:" << selfDmg
+        << "Element:" << element
+        << "Strengt:" << strengt
+        << "Weakness:" << weakness
+        << "Mana Cost:" << manaCost
+        << "Gold Cost:" << goldCost;
+    }
 }
