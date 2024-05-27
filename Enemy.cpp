@@ -18,9 +18,16 @@ int Enemy::getXPReward() const{
 std::string Enemy::getName() const{
     return mName;
 }
+std::string Enemy::getElement() const{
+    return mElement;
+}
 
 //Setters
 void Enemy::setXPReward(int newXPReward){
     mXPReward = newXPReward;
 }
+void Enemy::setElement(std::string newElement){
+    mElement = newElement;
+}
+
 

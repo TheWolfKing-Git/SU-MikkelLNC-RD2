@@ -59,7 +59,8 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
                 "Name VARCHAR(255) UNIQUE,"
                 "HP INT,"
                 "DMG INT,"
-                "XPReward INT"
+                "XPReward INT,"
+                "Element VARCHAR(255)"
                 ")";
         if (!mGameQuery.exec(createTB2)) {
             qDebug() << "Failed to create Enemy table:";
@@ -128,20 +129,21 @@ void Manager::addEnemies()
 {
     //After DB creation, insert enemies
     QList<QVariantList> enemies = {
-        {"Weak", 2, 1, 500},
-        {"Medium", 5, 2, 1000},
-        {"Strong", 10, 5, 5000},
-        {"Very Strong", 50, 20, 10000},
-        {"DEATH", 1000, 1000, 1}
+        {"Fire Imp", 2, 1, 500, "Fire"},
+        {"Rock Golem", 5, 2, 1000, "Earth"},
+        {"Steel Knight", 10, 5, 5000, "Metal"},
+        {"Storm Elemental", 50, 20, 10000, "Water"},
+        {"Forest Guardian", 1000, 1000, 1, "Forest"}
     };
 
 
     for (const auto& enemy : enemies) {
-        mGameQuery.prepare("INSERT INTO Enemy (Name, HP, DMG, XPReward) VALUES (?, ?, ?, ?)");
+        mGameQuery.prepare("INSERT INTO Enemy (Name, HP, DMG, XPReward, Element) VALUES (?, ?, ?, ?, ?)");
         mGameQuery.addBindValue(enemy[0]); // Name
         mGameQuery.addBindValue(enemy[1]); // HP
         mGameQuery.addBindValue(enemy[2]); // DMG
         mGameQuery.addBindValue(enemy[3]); // XPReward
+        mGameQuery.addBindValue(enemy[4]); // Element
 
         //Execute the query
         if (!mGameQuery.exec()) {
@@ -182,18 +184,19 @@ Enemy Manager::loadEnemy(int enemyID) {
     // Check if any results were returned
     if (mGameQuery.next())
     {
-        // Extract hero's attributes from the query result
+        // Extract enemys attributes from the query result
         QString name = mGameQuery.value("Name").toString();
         int hp = mGameQuery.value("HP").toInt();
         int dmg = mGameQuery.value("DMG").toInt();
         int xpreward = mGameQuery.value("XPReward").toInt();
+        QString element = mGameQuery.value("Element").toString();
 
-
-        // Construct a new instance of the hero using the retrieved attributes
+        // Construct a new instance of the enemy using the retrieved attributes
         Enemy loadedEnemy(name.toStdString());
         loadedEnemy.setHP(hp);
         loadedEnemy.setDMG(dmg);
         loadedEnemy.setXPReward(xpreward);
+        loadedEnemy.setElement(element.toStdString());
         return loadedEnemy;
 
     }
@@ -220,12 +223,14 @@ void Manager::printEnemies()
         int hp = mGameQuery.value("HP").toInt();
         int dmg = mGameQuery.value("DMG").toInt();
         int xpReward = mGameQuery.value("XPReward").toInt();
+        QString element = mGameQuery.value("Element").toString();
         qDebug()
         << "ID:" << id
         << "Enemy:" << name
         << "HP:" << hp
         << "DMG:" << dmg
-        << "XP Reward:" << xpReward;
+        << "XP Reward:" << xpReward
+        << "Element:" << element;
     }
 }
 
@@ -235,7 +240,8 @@ void Manager::printEnemyStats()
     std::cout << "Enemy name: " << mEnemy.getName() << std::endl
               << "HP: " << mEnemy.getHP() << std::endl
               << "DMG: " << mEnemy.getDMG() << std::endl
-              << "XP Reward: " << mEnemy.getXPReward() << std::endl;
+              << "XP Reward: " << mEnemy.getXPReward() << std::endl
+              << "Element: " << mEnemy.getElement() << std::endl;
 }
 
 //------------------------------------------------ Hero handling --------------------------------------------------------
@@ -573,6 +579,39 @@ void Manager::nextPhase()
 }
 
 int Manager::Encounter()
+{
+
+    //Return for state handling:
+    //Hero won: 10
+    //Enemy won: 20
+    //Error: -1
+    //std::cout << "Test: Try encounter" << std::endl;
+
+    while(mHero.isAlive() && mEnemy.isAlive()){
+
+        //std::cout << "Test: Enter fight loop" << std::endl;
+        printHeroStats();
+        printEnemyStats();
+
+        nextPhase();
+        mEnemy.takeDMG(mHero.getDMG());
+        if(!mEnemy.isAlive()){
+            //std::cout << "Test: Enemy dead" << std::endl;
+            mHero.resetHero();
+            mHero.addXP(mEnemy.getXPReward());
+            return 10;
+        }
+        mHero.takeDMG(mEnemy.getDMG());
+        if(!mHero.isAlive()){
+            mHero.resetHero();
+            return 20;
+        }
+
+    }
+    return -1;
+}
+
+int Manager::EncounterWithMagic(int magicID)
 {
 
     //Return for state handling:

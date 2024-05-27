@@ -40,6 +40,7 @@ public:
 
     //Fighting
     int Encounter();
+    int EncounterWithMagic(int magicID);
     void nextPhase();
 
     //Magic
