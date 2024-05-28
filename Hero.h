@@ -32,6 +32,8 @@ public:
     void subGold(int subedGold);
     void addMana(int addedMana);
     void subMana(int subedMana);
+    void healHP(int healedHP);
+    void healMana(int healedMana);
 
 protected:
     int mLevel;

@@ -59,7 +59,7 @@ void Hero::setMana(int newMana){
 //Functions
 void Hero::addXP(int addedXP){
     mCurrentXP += addedXP;
-    if(mCurrentXP > mLevel*1000){
+    if(mCurrentXP >= mLevel*1000){
         mCurrentXP -= (mLevel * 1000);
         addLevel(1);
         std::cout << "Your exprience shows and you gained a level!" << std::endl;
@@ -95,5 +95,30 @@ void Hero::addMana(int addedMana){
 }
 
 void Hero::subMana(int subedMana){
-    mMana += subedMana;
+    mMana -= subedMana;
 }
+
+void Hero::healHP(int healedHP) {
+    int maxHP = 10+(mLevel*2-2);
+    mHP = std::min(mHP + healedHP, maxHP);
+}
+
+void Hero::healMana(int healedMana) {
+    int maxMana = 10+(mLevel*2-2);
+    mMana = std::min(mMana + healedMana, maxMana);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,12 +1,11 @@
 #include "Manager.h"
 
 Manager::Manager(Hero hero, Enemy enemy, Magic magic, QSqlDatabase gameDatabase)
+    : mHero(hero), mEnemy(enemy), mMagic(magic), mDB(gameDatabase)
 {
 
-        mHero = hero;
-        mEnemy = enemy;
-        mMagic = magic;
-        mDB = gameDatabase;
+        // Initialize mGameQuery with the game database
+        mGameQuery = QSqlQuery(mDB);
 
         //Check open connection
         if (!mDB.open()) {
@@ -150,8 +149,14 @@ void Manager::addEnemies()
         {"Fire Imp", 2, 1, 500, "Fire"},
         {"Rock Golem", 5, 2, 1000, "Earth"},
         {"Steel Knight", 10, 5, 5000, "Metal"},
-        {"Storm Elemental", 50, 20, 10000, "Water"},
-        {"Forest Guardian", 1000, 1000, 1, "Forest"}
+        {"Storm Elemental", 50, 10, 10000, "Water"},
+        {"Forest Guardian", 1000, 1000, 1, "Forest"},
+        //Punching bags for test
+        {"Fire punching bag", 100, 1, 1000, "Fire"},
+        {"Earth punching bag", 100, 1, 1000, "Earh"},
+        {"Metal punching bag", 100, 1, 1000, "Metal"},
+        {"Water punching bag", 100, 1, 1000, "Water"},
+        {"Forest punching bag", 100, 1, 1000, "Forest"}
     };
 
 
@@ -598,9 +603,10 @@ void Manager::addGoldFromCave(int caveID)
 //------------------------------------------------ Fighting -------------------------------------------------------------
 void Manager::nextPhase()
 {
-    std::cout << "Press Enter to continue...";
+    std::cout << "Press Enter to continue..." << std::endl;
     std::cin.ignore();
     std::cin.get();
+    std::cout << "--------------------------------- Next Phase! ------------------------------------" << std::endl;
 }
 
 int Manager::Encounter()
@@ -646,39 +652,57 @@ int Manager::EncounterWithMagic()
     //Hero won: 10
     //Enemy won: 20
     //Error: -1
-    //std::cout << "Test: Try encounter" << std::endl;
+    //Print stats when first entering the encounter. Stats are only printed afterwards if you dont win instantly.
+    printHeroStats();
+    printEnemyStats();
 
     while(mHero.isAlive() && mEnemy.isAlive()){
 
         int useMagic = 0;
         std::cout << "Basic attack or use a magic?" << std::endl;
-        std::cout << "1: No" << std::endl;
-        std::cout << "2: Yes" << std::endl;
+        std::cout << "1: Basic attack" << std::endl;
+        std::cout << "2: Magic attack" << std::endl;
         std::cin >> useMagic;
 
         //If no magic use
         if (useMagic == 1)
         {
-            printHeroStats();
-            printEnemyStats();
-            nextPhase();
+            std::cout << "You hit the enemy!" << std::endl;
             mEnemy.takeDMG(mHero.getDMG());
             if(!mEnemy.isAlive()){
-                //std::cout << "Test: Enemy dead" << std::endl;
                 mHero.resetHero();
                 mHero.addXP(mEnemy.getXPReward());
                 return 10;
             }
+            std::cout << "The enemy hits you!" << std::endl;
             mHero.takeDMG(mEnemy.getDMG());
             if(!mHero.isAlive())
             {
                 mHero.resetHero();
                 return 20;
             }
+            printHeroStats();
+            printEnemyStats();
+            nextPhase();
         }
         //If magic use
         else if (useMagic == 2)
         {
+            //Check if the hero have any magics
+            try
+            {
+                if (!doesHeroHaveMagics(mHero.getName())) {
+                    std::cout << "Hero doesn't have any magics!" << std::endl;
+                    continue;
+                }
+            }
+            catch (const std::runtime_error& e)
+            {
+                std::cerr << e.what() << std::endl;
+                continue;
+            }
+
+            //Player input for which magic to use, also print of Hero magics and how much mana Hero has
             int selectedUseMagic = 0;
             std::cout << "What magic do you want to use?" << std::endl;
             printHeroMagics();
@@ -686,13 +710,25 @@ int Manager::EncounterWithMagic()
             std::cout << "Your current mana is: " << mHero.getMana() << std::endl;
             std::cout << std::endl;
             std::cin >> selectedUseMagic;
-            loadMagic(selectedUseMagic);
 
-            printHeroStats();
-            printEnemyStats();
-            nextPhase();
+            //Check if the hero has that specific magic!
+            try
+            {
+                if (!doesHeroHaveMagics(mHero.getName(), selectedUseMagic)) {
+                    std::cout << "Hero doesn't have that magic!" << std::endl;
+                    continue;
+                }
+            }
+            catch (const std::runtime_error& e)
+            {
+                std::cerr << e.what() << std::endl;
+                continue;
+            }
+            //If hero has the magic, load his selected magic
+            mMagic = loadMagic(selectedUseMagic);
+
             //Check if hero has enough mana to cast this spell
-            if(mMagic.getManaCost() < mHero.getMana())
+            if(mMagic.getManaCost() <= mHero.getMana())
             {
                 //Cast is possible, take selfDMG and sub mana
                 mHero.subMana(mMagic.getManaCost());
@@ -702,8 +738,10 @@ int Manager::EncounterWithMagic()
                     mHero.resetHero();
                     return 30;
                 }
+                //Check if the element of the enemy is the strenght of the magic
                 if (mEnemy.getElement() == mMagic.getStrength())
                 {
+                    std::cout << "The enemy is weak to your magic!" << std::endl;
                     mEnemy.takeDMG(mMagic.getDMG()*2);
                     if(!mEnemy.isAlive()){
                         mHero.resetHero();
@@ -711,8 +749,10 @@ int Manager::EncounterWithMagic()
                         return 10;
                     }
                 }
+                //Check if the element of the enemy is the weakness of the magic
                 else if (mEnemy.getElement() == mMagic.getWeakness())
                 {
+                    std::cout << "The enemy resists your magic!" << std::endl;
                     mEnemy.takeDMG(mMagic.getDMG()*0.5);
                     if(!mEnemy.isAlive()){
                         mHero.resetHero();
@@ -720,8 +760,26 @@ int Manager::EncounterWithMagic()
                         return 10;
                     }
                 }
+                //Check if the magic is healing HP
+                else if (mMagic.getElement() == "HealHP")
+                {
+                    int prevHP = mHero.getHP();
+                    std::cout << "You heal HP using magic!" << std::endl;
+                    mHero.healHP(mMagic.getSelfDMG());
+                    std::cout << "Your health went from: " << prevHP << " to " << mHero.getHP() << std::endl;
+                }
+                //Check if the magic is healing Mana
+                else if (mMagic.getElement() == "HealMana")
+                {
+                    int prevMana = mHero.getHP();
+                    std::cout << "You heal Mana using magic!" << std::endl;
+                    mHero.healMana(mMagic.getSelfDMG());
+                    std::cout << "Your mana went from: " << prevMana << " to " << mHero.getMana() << std::endl;
+                }
+                //If now of the above checks is true, then the magic works normally on the enemy
                 else
                 {
+                    std::cout << "The enemy is hit by your magic!" << std::endl;
                     mEnemy.takeDMG(mMagic.getDMG());
                     if(!mEnemy.isAlive()){
                         mHero.resetHero();
@@ -736,6 +794,9 @@ int Manager::EncounterWithMagic()
                     mHero.resetHero();
                     return 20;
                 }
+                printHeroStats();
+                printEnemyStats();
+                nextPhase();
             }
             else
             {
@@ -763,11 +824,20 @@ void Manager::addMagics()
 {
     // After DB creation, insert magics
     QList<QVariantList> magics = {
-        {1, "Fireball", 5, 3, "Fire", "Metal", "Water", 10, 100},
-        {2, "Rocksmash", 5, 3, "Earth", "Water", "Forest", 10, 100},
-        {3, "Shard Rain", 5, 3, "Metal", "Forest", "Fire", 10, 100},
-        {4, "Tsunami", 5, 3, "Water", "Fire", "Earth", 10, 100},
-        {5, "Root Crush", 5, 3, "Forest", "Earth", "Metal", 10, 100}
+        {1, "Fireball", 4, 0, "Fire", "Metal", "Water", 10, 1000},
+        {2, "Rocksmash", 5, 3, "Earth", "Water", "Forest", 10, 2500},
+        {3, "Shard Rain", 4, 1, "Metal", "Forest", "Fire", 10, 4000},
+        {4, "Wave Missile", 3, 0, "Water", "Fire", "Earth", 10, 5000},
+        {5, "Entangle", 5, 0, "Forest", "Earth", "Metal", 10, 5000},
+        {6, "Firestorm", 10, 5, "Fire", "Metal", "Water", 20, 10000},
+        {7, "Mountain Strike", 11, 2, "Earth", "Water", "Forest", 20, 12000},
+        {8, "Midas Touch", 15, 7, "Metal", "Forest", "Fire", 20, 14000},
+        {9, "Tsunami", 12, 4, "Water", "Fire", "Earth", 20, 16000},
+        {10, "Thorn Snatch", 9, 4, "Forest", "Earth", "Metal", 20, 18000},
+        {11, "Fast Heal", 0, 5, "HealHP", "HealHP", "HealHP", 10, 2000},
+        {12, "Greater Heal", 0, 15, "HealHP", "HealHP", "HealHP", 10, 4000},
+        {13, "Restore Mana", 0, 10, "HealMana", "HealMana", "HealMana", 0, 2000},
+        {14, "Rejuvenate Mana", 0, 20, "HealMana", "HealMana", "HealMana", 0, 4000}
     };
 
     for (const auto& magic : magics) {
@@ -917,7 +987,7 @@ void Manager::printHeroMagics()
     // Print magic vars
     while (mGameQuery.next())
     {
-        //int id = mGameQuery.value("ID").toInt();
+        int id = mGameQuery.value("ID").toInt();
         QString name = mGameQuery.value("Name").toString();
         int dmg = mGameQuery.value("DMG").toInt();
         int selfDmg = mGameQuery.value("SelfDMG").toInt();
@@ -928,7 +998,7 @@ void Manager::printHeroMagics()
         //int goldCost = mGameQuery.value("GoldCost").toInt();
 
         qDebug()
-        //<< "ID:" << id
+        << "ID:" << id
         << "Name:" << name
         << "DMG:" << dmg
         << "SelfDMG:" << selfDmg
@@ -948,7 +1018,6 @@ void Manager::buyMagic(int magicID)
     if (selectedMagic.getGoldCost() < mHero.getGold()){
 
         // Prepare the query to get the HeroID based on the hero's name
-        std::cout << mHero.getName() << std::endl;
         mGameQuery.prepare("SELECT ID FROM Hero WHERE Name = ?");
         mGameQuery.addBindValue(QString::fromStdString(mHero.getName()));
 
@@ -986,7 +1055,7 @@ void Manager::buyMagic(int magicID)
             {
                 //Purchase was a succes. subb Hero gold and print message.
                 mHero.subGold(selectedMagic.getGoldCost());
-                qDebug() << "Magic with ID" << QString::fromStdString(selectedMagic.getName())
+                qDebug() << "Magic " << QString::fromStdString(selectedMagic.getName())
                          <<  "successfully purchased by " << QString::fromStdString(mHero.getName());
             }
         }
@@ -1004,4 +1073,143 @@ void Manager::buyMagic(int magicID)
     }
 
 
+}
+
+//For active hero in game
+bool Manager::doesHeroHaveMagics()
+{
+    // Retrieve the HeroID based on the hero's name
+    mGameQuery.prepare("SELECT ID FROM Hero WHERE Name = ?");
+    mGameQuery.addBindValue(QString::fromStdString(mHero.getName()));
+
+    if (!mGameQuery.exec())
+    {
+        qDebug() << "Failed to retrieve HeroID:" << mGameQuery.lastError().text();
+        throw std::runtime_error("Failed to retrieve HeroID");
+    }
+
+    // Check if a result is returned
+    if (!mGameQuery.next())
+    {
+        qDebug() << "Hero not found with name:" << QString::fromStdString(mHero.getName());
+        throw std::runtime_error("Hero not found with the specified name");
+    }
+
+    int heroID = mGameQuery.value("ID").toInt();
+
+    // Prepare the query to check if the HeroID exists in HeroMagic table
+    QString checkHeroMagicQuery = "SELECT COUNT(*) FROM HeroMagic WHERE HeroID = ?";
+    mGameQuery.prepare(checkHeroMagicQuery);
+    mGameQuery.addBindValue(heroID);
+
+    if (!mGameQuery.exec())
+    {
+        qDebug() << "Failed to execute query:" << mGameQuery.lastError().text();
+        throw std::runtime_error("Failed to execute query");
+    }
+
+    // Check if any rows are returned
+    if (mGameQuery.next())
+    {
+        int magicCount = mGameQuery.value(0).toInt();
+        return (magicCount > 0); // Return true if the hero has magics, otherwise false
+    }
+    else
+    {
+        qDebug() << "No rows returned from query.";
+        throw std::runtime_error("No rows returned from query");
+    }
+}
+
+//For a specific hero
+bool Manager::doesHeroHaveMagics(const std::string& heroName)
+{
+    // Retrieve the HeroID based on the hero's name
+    mGameQuery.prepare("SELECT ID FROM Hero WHERE Name = ?");
+    mGameQuery.addBindValue(QString::fromStdString(heroName));
+
+    if (!mGameQuery.exec())
+    {
+        qDebug() << "Failed to retrieve HeroID:" << mGameQuery.lastError().text();
+        throw std::runtime_error("Failed to retrieve HeroID");
+    }
+
+    // Check if a result is returned
+    if (!mGameQuery.next())
+    {
+        qDebug() << "Hero not found with name:" << QString::fromStdString(heroName);
+        throw std::runtime_error("Hero not found with the specified name");
+    }
+
+    int heroID = mGameQuery.value("ID").toInt();
+
+    // Prepare the query to check if the HeroID exists in HeroMagic table
+    QString checkHeroMagicQuery = "SELECT COUNT(*) FROM HeroMagic WHERE HeroID = ?";
+    mGameQuery.prepare(checkHeroMagicQuery);
+    mGameQuery.addBindValue(heroID);
+
+    if (!mGameQuery.exec())
+    {
+        qDebug() << "Failed to execute query:" << mGameQuery.lastError().text();
+        throw std::runtime_error("Failed to execute query");
+    }
+
+    // Check if any rows are returned
+    if (mGameQuery.next())
+    {
+        int magicCount = mGameQuery.value(0).toInt();
+        return (magicCount > 0); // Return true if the hero has magics, otherwise false
+    }
+    else
+    {
+        qDebug() << "No rows returned from query.";
+        throw std::runtime_error("No rows returned from query");
+    }
+}
+
+//For a specific hero AND magicID
+bool Manager::doesHeroHaveMagics(const std::string& heroName, int magicID)
+{
+    // Retrieve the HeroID based on the hero's name
+    mGameQuery.prepare("SELECT ID FROM Hero WHERE Name = ?");
+    mGameQuery.addBindValue(QString::fromStdString(heroName));
+
+    if (!mGameQuery.exec())
+    {
+        qDebug() << "Failed to retrieve HeroID:" << mGameQuery.lastError().text();
+        throw std::runtime_error("Failed to retrieve HeroID");
+    }
+
+    // Check if a result is returned
+    if (!mGameQuery.next())
+    {
+        qDebug() << "Hero not found with name:" << QString::fromStdString(heroName);
+        throw std::runtime_error("Hero not found with the specified name");
+    }
+
+    int heroID = mGameQuery.value("ID").toInt();
+
+    // Prepare the query to check if the HeroID and MagicID exist in HeroMagic table
+    QString checkHeroMagicQuery = "SELECT COUNT(*) FROM HeroMagic WHERE HeroID = ? AND MagicID = ?";
+    mGameQuery.prepare(checkHeroMagicQuery);
+    mGameQuery.addBindValue(heroID);
+    mGameQuery.addBindValue(magicID);
+
+    if (!mGameQuery.exec())
+    {
+        qDebug() << "Failed to execute query:" << mGameQuery.lastError().text();
+        throw std::runtime_error("Failed to execute query");
+    }
+
+    // Check if any rows are returned
+    if (mGameQuery.next())
+    {
+        int magicCount = mGameQuery.value(0).toInt();
+        return (magicCount > 0); // Return true if the hero has the specific magic, otherwise false
+    }
+    else
+    {
+        qDebug() << "No rows returned from query.";
+        throw std::runtime_error("No rows returned from query");
+    }
 }

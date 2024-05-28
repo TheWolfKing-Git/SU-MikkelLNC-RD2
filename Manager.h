@@ -50,6 +50,9 @@ public:
     void printMagics();
     void printHeroMagics();
     void buyMagic(int MagicID);
+    bool doesHeroHaveMagics();
+    bool doesHeroHaveMagics(const std::string& heroName);
+    bool doesHeroHaveMagics(const std::string& heroName, int magicID);
 
 
 private:

@@ -30,6 +30,7 @@ int main()
     QList<int> cavePickedEnemies;
     int caveGold;
     int pickedMagicForPurchase;
+    int enemyCount = 0;
 
     Manager Game(gameHero, gameEnemy, gameMagic, DB);
     Game.addEnemies();
@@ -217,57 +218,70 @@ int main()
                 GameState = Game.EncounterWithMagic();
                 if(GameState == 10){
                     std::cout << "You won the fight!" << std::endl;
+                    std::cout << "" << std::endl;
                     GameState = 5;
                     break;
                 }
                 else if(GameState == 20){
                     std::cout << "You lost the fight... Train against weaker enemies!" << std::endl;
+                    std::cout << "" << std::endl;
                     GameState = 5;
                     break;
                 }
                 else if(GameState == 30){
                     std::cout << "You died while casting a spell..." << std::endl;
+                    std::cout << "" << std::endl;
                     GameState = 5;
                     break;
                 }
                 else if(GameState == -1){
                     std::cout << "An error has occured!" << std::endl;
+                    std::cout << "" << std::endl;
                     GameState = 5;
                     break;
                 }
 
             case 110:
                 //10 = won, 20 = lost, -1 error,
+                enemyCount = 0;
                 std::cout << "You arrive in the cave and start the struggle!" << std::endl;
+                std::cout << "" << std::endl;
                 foreach(int enemyIDs, cavePickedEnemies)
                 {
+                    enemyCount++;
                     gameEnemy = Game.loadEnemy(enemyIDs);
                     Game.setEnemy(gameEnemy);
                     GameState = Game.EncounterWithMagic();
                     if(GameState == 10)
                     {
-                        std::cout << "You won the fight against enemy# " << enemyIDs<< std::endl;
+                        std::cout << "You won the fight against enemy# " << enemyCount<<  " " << gameEnemy.getName() << std::endl;
                         std::cout << "The fight continues!" << std::endl;
+                        std::cout << "" << std::endl;
                     }
                     else if(GameState == 20)
                     {
-                        std::cout << "You lost the fight... Train against weaker enemies!" << std::endl;
+                        std::cout << "You lost the fight against enemy# " << enemyCount << " " << gameEnemy.getName() << std::endl;
+                        std::cout << "Train against weaker enemies!" << std::endl;
+                        std::cout << "" << std::endl;
                         GameState = 5;
                         break;
                     }
                     else if(GameState == 30){
                         std::cout << "You died while casting a spell..." << std::endl;
+                        std::cout << "" << std::endl;
                         GameState = 5;
                         break;
                     }
                     else if(GameState == -1)
                     {
                         std::cout << "An error has occured in cave fight!" << std::endl;
+                        std::cout << "" << std::endl;
                         GameState = 5;
                         break;
                     }
                 }
                 std::cout << "You won the cave fight! " << caveGold << " gold has been added to your purse!" <<std::endl;
+                std::cout << "" << std::endl;
                 Game.addGoldFromCave(cavePick);
                 GameState = 5;
                 break;
