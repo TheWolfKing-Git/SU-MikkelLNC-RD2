@@ -29,7 +29,9 @@ public:
     void addLevel(int addedLevel);
     void resetHero();
     void addGold(int addedGold);
+    void subGold(int subedGold);
     void addMana(int addedMana);
+    void subMana(int subedMana);
 
 protected:
     int mLevel;

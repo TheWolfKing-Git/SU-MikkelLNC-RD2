@@ -8,6 +8,7 @@ Hero::Hero()
     mLevel = 1;
     mCurrentXP = 0;
     mGold = 0;
+    mMana = 10;
 }
 
 Hero::Hero(std::string newName)
@@ -18,6 +19,7 @@ Hero::Hero(std::string newName)
     mLevel = 1;
     mCurrentXP = 0;
     mGold = 0;
+    mMana = 10;
 }
 
 //Getters
@@ -63,6 +65,7 @@ void Hero::addXP(int addedXP){
         std::cout << "Your exprience shows and you gained a level!" << std::endl;
         std::cout <<"Level increased from: " << getLevel()-1 << " to " << getLevel() << std::endl;
         std::cout <<"HP increased to: " << getHP() << std::endl;
+        std::cout <<"Mana increased to: " << getMana() << std::endl;
         std::cout <<"DMG increased to: " << getDMG() << std::endl;
     }
 }
@@ -76,12 +79,21 @@ void Hero::addLevel(int addedLevel){
 
 void Hero::resetHero(){
     mHP = 10+(mLevel*2-2);
+    mMana = 10+(mLevel*2-2);
 }
 
 void Hero::addGold(int addedGold){
     mGold += addedGold;
 }
 
+void Hero::subGold(int subedGold){
+    mGold -= subedGold;
+}
+
 void Hero::addMana(int addedMana){
     mMana += addedMana;
+}
+
+void Hero::subMana(int subedMana){
+    mMana += subedMana;
 }

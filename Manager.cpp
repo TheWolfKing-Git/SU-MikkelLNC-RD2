@@ -1,10 +1,11 @@
 #include "Manager.h"
 
-Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
+Manager::Manager(Hero hero, Enemy enemy, Magic magic, QSqlDatabase gameDatabase)
 {
 
         mHero = hero;
         mEnemy = enemy;
+        mMagic = magic;
         mDB = gameDatabase;
 
         //Check open connection
@@ -43,6 +44,7 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
                 "ID INT AUTO_INCREMENT PRIMARY KEY,"
                 "Name VARCHAR(255) UNIQUE,"
                 "HP INT,"
+                "Mana INT,"
                 "DMG INT,"
                 "Level INT,"
                 "XP INT,"
@@ -97,11 +99,11 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
             qDebug() << mGameQuery.lastError().text();
         }
 
-        QString dropTB5 = "DROP TABLE IF EXISTS Magic";
+        /*QString dropTB5 = "DROP TABLE IF EXISTS Magic";
         if (!mGameQuery.exec(dropTB5)) {
             qDebug() << "Failed to drop Magic table:";
             qDebug() << mGameQuery.lastError().text();
-        }
+        }*/
         // Create table for Magic
         QString createTB5 = "CREATE TABLE IF NOT EXISTS Magic ("
                             "ID INT AUTO_INCREMENT PRIMARY KEY,"
@@ -118,7 +120,23 @@ Manager::Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase)
             qDebug() << "Failed to create Magic table:";
             qDebug() << mGameQuery.lastError().text();
         }
+
+        // Create table for HeroMagic
+        QString createTB6 = "CREATE TABLE IF NOT EXISTS HeroMagic ("
+                            "ID INT AUTO_INCREMENT PRIMARY KEY,"
+                            "HeroID INT,"
+                            "MagicID INT,"
+                            "FOREIGN KEY (HeroID) REFERENCES Hero(ID),"
+                            "FOREIGN KEY (MagicID) REFERENCES Magic(ID),"
+                            "UNIQUE(HeroID, MagicID)" // Ensure each hero can own each magic only once
+                            ")";
+        if (!mGameQuery.exec(createTB6)) {
+            qDebug() << "Failed to create HeroMagic table:";
+            qDebug() << mGameQuery.lastError().text();
+        }
 }
+
+
 //------------------------------------------------ Enemy Handling --------------------------------------------------------
 void Manager::setEnemy(Enemy newEnemy)
 {
@@ -253,10 +271,11 @@ void Manager::setHero(Hero newHero)
 void Manager::saveHero(){
 
     // Prepare the INSERT query for the Hero table
-    QString insertHeroQuery = "INSERT INTO Hero (Name, HP, DMG, Level, XP, Gold) "
-                              "VALUES (:Name, :HP, :DMG, :Level, :XP, :Gold)"
+    QString insertHeroQuery = "INSERT INTO Hero (Name, HP, Mana, DMG, Level, XP, Gold) "
+                              "VALUES (:Name, :HP, :Mana, :DMG, :Level, :XP, :Gold)"
                               "ON DUPLICATE KEY UPDATE "
                               "HP = :HP,"
+                              "Mana = :Mana,"
                               "DMG = :DMG,"
                               "Level = :Level,"
                               "XP = :XP,"
@@ -266,6 +285,7 @@ void Manager::saveHero(){
     // Bind values to the parameters
     mGameQuery.bindValue(":Name", QString::fromStdString(mHero.getName()));
     mGameQuery.bindValue(":HP", mHero.getHP());
+    mGameQuery.bindValue(":Mana", mHero.getMana());
     mGameQuery.bindValue(":DMG", mHero.getDMG());
     mGameQuery.bindValue(":Level", mHero.getLevel());
     mGameQuery.bindValue(":XP", mHero.getCurrentXP());
@@ -277,7 +297,7 @@ void Manager::saveHero(){
         qDebug() << mGameQuery.lastError().text();
     }
     // Success message
-    qDebug() << "Your hero takes a rest at the local inn, and is ready when you return!";
+    //qDebug() << "Your hero takes a rest at the local inn, and is ready when you return!";
 }
 
 Hero Manager::loadHero(int heroID) {
@@ -299,6 +319,7 @@ Hero Manager::loadHero(int heroID) {
         // Extract hero's attributes from the query result
         QString name = mGameQuery.value("Name").toString();
         int hp = mGameQuery.value("HP").toInt();
+        int mana = mGameQuery.value("Mana").toInt();
         int dmg = mGameQuery.value("DMG").toInt();
         int level = mGameQuery.value("Level").toInt();
         int xp = mGameQuery.value("XP").toInt();
@@ -307,6 +328,7 @@ Hero Manager::loadHero(int heroID) {
         // Construct a new instance of the hero using the retrieved attributes
         Hero loadedHero(name.toStdString());
         loadedHero.setHP(hp);
+        loadedHero.setMana(mana);
         loadedHero.setDMG(dmg);
         loadedHero.setLevel(level);
         loadedHero.setXP(xp);
@@ -333,6 +355,7 @@ void Manager::printHeros()
         int id = mGameQuery.value("ID").toInt();
         QString name = mGameQuery.value("Name").toString();
         int hp = mGameQuery.value("HP").toInt();
+        int mana = mGameQuery.value("Mana").toInt();
         int dmg = mGameQuery.value("DMG").toInt();
         int level = mGameQuery.value("Level").toInt();
         int xp = mGameQuery.value("XP").toInt();
@@ -342,6 +365,7 @@ void Manager::printHeros()
         << "ID:" << id
         << "Name:" << name
         << "HP:" << hp
+        << "Mana:" << mana
         << "DMG:" << dmg
         << "Level:" << level
         << "XP:" << xp
@@ -354,6 +378,7 @@ void Manager::printHeroStats()
     std::cout << "---- Current Hero ----" << std::endl;
     std::cout << "Enemy name: " << mHero.getName() << std::endl
               << "HP: " << mHero.getHP() << std::endl
+              << "Mana: " << mHero.getMana() << std::endl
               << "DMG: " << mHero.getDMG() << std::endl
               << "Level: " << mHero.getLevel() << std::endl
               << "XP: " << mHero.getCurrentXP() << std::endl
@@ -595,14 +620,16 @@ int Manager::Encounter()
 
         nextPhase();
         mEnemy.takeDMG(mHero.getDMG());
-        if(!mEnemy.isAlive()){
+        if(!mEnemy.isAlive())
+        {
             //std::cout << "Test: Enemy dead" << std::endl;
             mHero.resetHero();
             mHero.addXP(mEnemy.getXPReward());
             return 10;
         }
         mHero.takeDMG(mEnemy.getDMG());
-        if(!mHero.isAlive()){
+        if(!mHero.isAlive())
+        {
             mHero.resetHero();
             return 20;
         }
@@ -611,7 +638,8 @@ int Manager::Encounter()
     return -1;
 }
 
-int Manager::EncounterWithMagic(int magicID)
+
+int Manager::EncounterWithMagic()
 {
 
     //Return for state handling:
@@ -622,29 +650,115 @@ int Manager::EncounterWithMagic(int magicID)
 
     while(mHero.isAlive() && mEnemy.isAlive()){
 
-        //std::cout << "Test: Enter fight loop" << std::endl;
-        printHeroStats();
-        printEnemyStats();
+        int useMagic = 0;
+        std::cout << "Basic attack or use a magic?" << std::endl;
+        std::cout << "1: No" << std::endl;
+        std::cout << "2: Yes" << std::endl;
+        std::cin >> useMagic;
 
-        nextPhase();
-        mEnemy.takeDMG(mHero.getDMG());
-        if(!mEnemy.isAlive()){
-            //std::cout << "Test: Enemy dead" << std::endl;
-            mHero.resetHero();
-            mHero.addXP(mEnemy.getXPReward());
-            return 10;
+        //If no magic use
+        if (useMagic == 1)
+        {
+            printHeroStats();
+            printEnemyStats();
+            nextPhase();
+            mEnemy.takeDMG(mHero.getDMG());
+            if(!mEnemy.isAlive()){
+                //std::cout << "Test: Enemy dead" << std::endl;
+                mHero.resetHero();
+                mHero.addXP(mEnemy.getXPReward());
+                return 10;
+            }
+            mHero.takeDMG(mEnemy.getDMG());
+            if(!mHero.isAlive())
+            {
+                mHero.resetHero();
+                return 20;
+            }
         }
-        mHero.takeDMG(mEnemy.getDMG());
-        if(!mHero.isAlive()){
-            mHero.resetHero();
-            return 20;
+        //If magic use
+        else if (useMagic == 2)
+        {
+            int selectedUseMagic = 0;
+            std::cout << "What magic do you want to use?" << std::endl;
+            printHeroMagics();
+            std::cout << std::endl;
+            std::cout << "Your current mana is: " << mHero.getMana() << std::endl;
+            std::cout << std::endl;
+            std::cin >> selectedUseMagic;
+            loadMagic(selectedUseMagic);
+
+            printHeroStats();
+            printEnemyStats();
+            nextPhase();
+            //Check if hero has enough mana to cast this spell
+            if(mMagic.getManaCost() < mHero.getMana())
+            {
+                //Cast is possible, take selfDMG and sub mana
+                mHero.subMana(mMagic.getManaCost());
+                mHero.takeDMG(mMagic.getSelfDMG());
+                if(!mHero.isAlive())
+                {
+                    mHero.resetHero();
+                    return 30;
+                }
+                if (mEnemy.getElement() == mMagic.getStrength())
+                {
+                    mEnemy.takeDMG(mMagic.getDMG()*2);
+                    if(!mEnemy.isAlive()){
+                        mHero.resetHero();
+                        mHero.addXP(mEnemy.getXPReward());
+                        return 10;
+                    }
+                }
+                else if (mEnemy.getElement() == mMagic.getWeakness())
+                {
+                    mEnemy.takeDMG(mMagic.getDMG()*0.5);
+                    if(!mEnemy.isAlive()){
+                        mHero.resetHero();
+                        mHero.addXP(mEnemy.getXPReward());
+                        return 10;
+                    }
+                }
+                else
+                {
+                    mEnemy.takeDMG(mMagic.getDMG());
+                    if(!mEnemy.isAlive()){
+                        mHero.resetHero();
+                        mHero.addXP(mEnemy.getXPReward());
+                        return 10;
+                    }
+                }
+
+                mHero.takeDMG(mEnemy.getDMG());
+                if(!mHero.isAlive())
+                {
+                    mHero.resetHero();
+                    return 20;
+                }
+            }
+            else
+            {
+                std::cout << "Not enough mana to use this magic!" << std::endl;
+            }
+
         }
+        //Invalid selection
+        else
+        {
+            std::cout << "Please choose 1 or 2 for an attack type!" << std::endl;
+        }
+
 
     }
     return -1;
 }
 
 //------------------------------------------------ Magic -------------------------------------------------------------
+void Manager::setMagic(Magic newMagic){
+    mMagic = newMagic;
+}
+
 void Manager::addMagics()
 {
     // After DB creation, insert magics
@@ -736,7 +850,9 @@ Magic Manager::loadMagic(int magicID)
 
 void Manager::printMagics()
 {
-    if (!mGameQuery.exec("SELECT * FROM Magic"))
+    QString printMagicsQuery = "SELECT * FROM Magic";
+    mGameQuery.prepare(printMagicsQuery);
+    if (!mGameQuery.exec())
     {
         qDebug() << "Failed to execute query:" << mGameQuery.lastError().text();
     }
@@ -765,4 +881,127 @@ void Manager::printMagics()
         << "Mana Cost:" << manaCost
         << "Gold Cost:" << goldCost;
     }
+}
+
+void Manager::printHeroMagics()
+{
+    // Retrieve the HeroID based on the hero's name
+    mGameQuery.prepare("SELECT ID FROM Hero WHERE Name = ?");
+    mGameQuery.addBindValue(QString::fromStdString(mHero.getName()));
+
+    if (!mGameQuery.exec()) {
+        qDebug() << "Failed to retrieve HeroID:" << mGameQuery.lastError().text();
+        throw std::runtime_error("Failed to retrieve HeroID");
+    }
+
+    // Check if a result is returned
+    if (!mGameQuery.next()) {
+        qDebug() << "Hero not found with name:" << QString::fromStdString(mHero.getName());
+        throw std::runtime_error("Hero not found with the specified name");
+    }
+
+    int heroID = mGameQuery.value("ID").toInt();
+
+    // Prepare the query to join HeroMagic and Magic tables to get the magics owned by the hero
+    QString printHeroMagicsQuery = "SELECT Magic.* FROM Magic "
+                                   "JOIN HeroMagic ON Magic.ID = HeroMagic.MagicID "
+                                   "WHERE HeroMagic.HeroID = ?";
+    mGameQuery.prepare(printHeroMagicsQuery);
+    mGameQuery.addBindValue(heroID);
+
+    if (!mGameQuery.exec()) {
+        qDebug() << "Failed to execute query:" << mGameQuery.lastError().text();
+        throw std::runtime_error("Failed to execute query");
+    }
+
+    // Print magic vars
+    while (mGameQuery.next())
+    {
+        //int id = mGameQuery.value("ID").toInt();
+        QString name = mGameQuery.value("Name").toString();
+        int dmg = mGameQuery.value("DMG").toInt();
+        int selfDmg = mGameQuery.value("SelfDMG").toInt();
+        QString element = mGameQuery.value("Element").toString();
+        QString strengt = mGameQuery.value("Strengt").toString();
+        QString weakness = mGameQuery.value("Weakness").toString();
+        int manaCost = mGameQuery.value("ManaCost").toInt();
+        //int goldCost = mGameQuery.value("GoldCost").toInt();
+
+        qDebug()
+        //<< "ID:" << id
+        << "Name:" << name
+        << "DMG:" << dmg
+        << "SelfDMG:" << selfDmg
+        << "Element:" << element
+        << "Strength:" << strengt
+        << "Weakness:" << weakness
+        << "Mana Cost:" << manaCost;
+        //<< "Gold Cost:" << goldCost;
+    }
+}
+
+void Manager::buyMagic(int magicID)
+{
+    Magic selectedMagic = loadMagic(magicID);
+
+    // Check if the hero has enough gold to buy the magic
+    if (selectedMagic.getGoldCost() < mHero.getGold()){
+
+        // Prepare the query to get the HeroID based on the hero's name
+        std::cout << mHero.getName() << std::endl;
+        mGameQuery.prepare("SELECT ID FROM Hero WHERE Name = ?");
+        mGameQuery.addBindValue(QString::fromStdString(mHero.getName()));
+
+        // Get the heroID
+        if (!mGameQuery.exec()) {
+            qDebug() << "Failed to retrieve HeroID:" << mGameQuery.lastError().text();
+            throw std::runtime_error("Failed to retrieve HeroID");
+        }
+
+        if (mGameQuery.next())
+        {
+            int heroID = mGameQuery.value("ID").toInt();
+
+            // Prepare the query to insert the new record into the HeroMagic table
+            mGameQuery.prepare("INSERT INTO HeroMagic (HeroID, MagicID) VALUES (?, ?)");
+            mGameQuery.addBindValue(heroID);  // Bind the hero's ID
+            mGameQuery.addBindValue(selectedMagic.getID());  // Bind the magic's ID
+
+            // Execute the query
+            if (!mGameQuery.exec())
+            {
+                //Check if hero owns magic with duplicate entry
+                if (mGameQuery.lastError().number() == 1062)
+                {
+                    qDebug() << "Hero already mastered this magic!";
+                }
+                //Some other error for purchase
+                else
+                {
+                    qDebug() << "Failed to insert into HeroMagic table:" << mGameQuery.lastError().text();
+                    throw std::runtime_error("Failed to insert into HeroMagic table");
+                }
+            }
+            else
+            {
+                //Purchase was a succes. subb Hero gold and print message.
+                mHero.subGold(selectedMagic.getGoldCost());
+                qDebug() << "Magic with ID" << QString::fromStdString(selectedMagic.getName())
+                         <<  "successfully purchased by " << QString::fromStdString(mHero.getName());
+            }
+        }
+        else
+        {
+            qDebug() << "Hero not found with name:" << QString::fromStdString(mHero.getName());
+            throw std::runtime_error("Hero not found with the specified name");
+        }
+    }
+    //Not enough gold to purchase
+    else
+    {
+        qDebug() << "Not enough gold to buy the magic";
+        throw std::runtime_error("Not enough gold to buy the magic");
+    }
+
+
 }

@@ -21,6 +21,7 @@ int main()
     Hero gameHero;
     Hero my_Hero;
     Enemy gameEnemy;
+    Magic gameMagic;
     std::string heroName;
 
     int heroPick;
@@ -28,8 +29,9 @@ int main()
     int cavePick;
     QList<int> cavePickedEnemies;
     int caveGold;
+    int pickedMagicForPurchase;
 
-    Manager Game(gameHero, gameEnemy, DB);
+    Manager Game(gameHero, gameEnemy, gameMagic, DB);
     Game.addEnemies();
     Game.addCavesToGame();
     Game.addEnemiesToCaves();
@@ -41,8 +43,9 @@ int main()
                 std::cout << "Select an option:" << std::endl;
                 std::cout << "1: Start adventure with a new Hero! " << std::endl;
                 std::cout << "2: Continue adventure with a Hero!" << std::endl;
-                std::cout << "3: Show Heros ready for adventure!" << std::endl;
-                std::cout << "4: Show Enemies for slaying!" << std::endl;
+                std::cout << "7: Show Heros ready for adventure!" << std::endl;
+                std::cout << "8: Show Enemies for slaying!" << std::endl;
+                std::cout << "9: Show The magics of this world!" << std::endl;
                 std::cout << "11: Exit" << std::endl;
                 std::cout << std::endl;
                 std::cin >> GameState;
@@ -54,6 +57,7 @@ int main()
                 std::cin >> heroName;
                 my_Hero = Hero(heroName);
                 Game.setHero(my_Hero);
+                Game.saveHero();
                 GameState = 5;
                 break;
 
@@ -78,13 +82,17 @@ int main()
                     break;
                 }
 
-            case 3:
+            case 7:
                 Game.printHeros();
                 GameState = 0;
                 break;
 
-            case 4:
+            case 8:
                 Game.printEnemies();
+                GameState = 0;
+                break;
+            case 9:
+                Game.printMagics();
                 GameState = 0;
                 break;
 
@@ -93,6 +101,8 @@ int main()
                 std::cout << "1: Show available enemies for fighting" << std::endl;
                 std::cout << "2: Show caves for conquering" << std::endl;
                 std::cout << "3: Show Hero stats" << std::endl;
+                std::cout << "4: Buy Magic for this hero" << std::endl;
+                std::cout << "5: Show Magics for this hero" << std::endl;
                 std::cout << "9: Exit the adventure and save Hero" << std::endl;
                 std::cout << "11: Exit the adventure without saving" << std::endl;
                 std::cin >> AdventureState;
@@ -138,10 +148,48 @@ int main()
                     Game.printHeroStats();
                     break;
                 }
+                //Buy Magics
+                else if(AdventureState == 4)
+                {
+                    std::cout << "Select an magic to purchase:" << std::endl;
+                    Game.printMagics();
+                    std::cin >> pickedMagicForPurchase;
+                    // Attempt buy magic
+                    try
+                    {
+                        Game.buyMagic(pickedMagicForPurchase);
+                        GameState = 5;
+                        break;
+                    }
+                    catch (const std::runtime_error& e)
+                    {
+                        std::cerr << "Failed to buy magic: " << e.what() << std::endl;
+                        GameState = 5;
+                        break;
+                    }
+                }
+                //Show Magics for hero
+                else if(AdventureState == 5)
+                {
+                    // Attempt show magic
+                    try
+                    {
+                        Game.printHeroMagics();
+                        GameState = 5;
+                        break;
+                    }
+                    catch (const std::runtime_error& e)
+                    {
+                        std::cerr << "Failed to show magics: " << e.what() << std::endl;
+                        GameState = 5;
+                        break;
+                    }
+                }
                 //Save hero and go to main menu
                 else if (AdventureState == 9)
                 {
                     Game.saveHero();
+                    std::cout << "Your hero takes a rest at the local inn, and is ready when you return!" << std::endl;
                     GameState = 0;
                     break;
 
@@ -165,8 +213,8 @@ int main()
                 return 0;
 
             case 100:
-                //10 = won, 20 = lost, -1 error;
-                GameState = Game.Encounter();
+                //10 = won, 20 = lost, 30 = died casting magic, -1 error;
+                GameState = Game.EncounterWithMagic();
                 if(GameState == 10){
                     std::cout << "You won the fight!" << std::endl;
                     GameState = 5;
@@ -174,6 +222,11 @@ int main()
                 }
                 else if(GameState == 20){
                     std::cout << "You lost the fight... Train against weaker enemies!" << std::endl;
+                    GameState = 5;
+                    break;
+                }
+                else if(GameState == 30){
+                    std::cout << "You died while casting a spell..." << std::endl;
                     GameState = 5;
                     break;
                 }
@@ -190,7 +243,7 @@ int main()
                 {
                     gameEnemy = Game.loadEnemy(enemyIDs);
                     Game.setEnemy(gameEnemy);
-                    GameState = Game.Encounter();
+                    GameState = Game.EncounterWithMagic();
                     if(GameState == 10)
                     {
                         std::cout << "You won the fight against enemy# " << enemyIDs<< std::endl;
@@ -199,6 +252,11 @@ int main()
                     else if(GameState == 20)
                     {
                         std::cout << "You lost the fight... Train against weaker enemies!" << std::endl;
+                        GameState = 5;
+                        break;
+                    }
+                    else if(GameState == 30){
+                        std::cout << "You died while casting a spell..." << std::endl;
                         GameState = 5;
                         break;
                     }
@@ -213,6 +271,8 @@ int main()
                 Game.addGoldFromCave(cavePick);
                 GameState = 5;
                 break;
+
+
 
             default:
                 std::cout << "Invalid option. Please try again." << std::endl;

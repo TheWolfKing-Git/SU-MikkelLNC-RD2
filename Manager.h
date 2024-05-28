@@ -13,7 +13,7 @@
 class Manager
 {
 public:
-    Manager(Hero hero, Enemy enemy, QSqlDatabase gameDatabase);
+    Manager(Hero hero, Enemy enemy, Magic magic, QSqlDatabase gameDatabase);
 
     //Enemy handling
     void setEnemy(Enemy newEnemy);
@@ -40,18 +40,22 @@ public:
 
     //Fighting
     int Encounter();
-    int EncounterWithMagic(int magicID);
+    int EncounterWithMagic();
     void nextPhase();
 
     //Magic
+    void setMagic(Magic newMagic);
     void addMagics();
     Magic loadMagic(int magicID);
     void printMagics();
+    void printHeroMagics();
+    void buyMagic(int MagicID);
 
 
 private:
     Hero mHero;
     Enemy mEnemy;
+    Magic mMagic;
     QSqlQuery mGameQuery;
     QSqlDatabase mDB;
 
