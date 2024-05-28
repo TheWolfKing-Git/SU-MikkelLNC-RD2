@@ -83,6 +83,7 @@ int main()
                     break;
                 }
 
+            //Print hero case
             case 7:
                 Game.printHeros();
                 GameState = 0;
